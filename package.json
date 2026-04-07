@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "auth:twitch": "node src/auth/twitch-auth.js"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
