@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 const API_BASE = process.env.GROQ_API_BASE ?? 'https://api.groq.com/openai/v1';
 const API_KEY = process.env.GROQ_API_KEY;
-const DEFAULT_MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-20b';
+const DEFAULT_MODEL = process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant';
 
 /**
  * Ejecuta una llamada LLM vía Groq (OpenAI-compatible).
@@ -25,7 +25,7 @@ export async function pront(prompt, opts = {}) {
     if (typeof prompt !== 'string' || !prompt.trim()) return 'FALSE';
 
     // Permite añadir un prefijo al texto generado por IA, configurable por variable de entorno
-    const IA_PREFIX = process.env.GROQ_CONTEXT ?? "";
+    const IA_CONTEXT = process.env.GROQ_CONTEXT ?? "";
 
     const base = API_BASE.replace(/\/$/, '');
     const res = await fetch(`${base}/responses`, {
@@ -39,7 +39,7 @@ export async function pront(prompt, opts = {}) {
         input: [
           {
             "role": "system",
-            "content": IA_PREFIX
+            "content": IA_CONTEXT
           },
           {
             "role": "user",
@@ -47,8 +47,8 @@ export async function pront(prompt, opts = {}) {
           }
         ],
         // Estos campos existen en la Responses API OpenAI-compatible.
-        temperature: typeof opts.temperature === 'number' ? opts.temperature : 0.1,
-        max_output_tokens: typeof opts.max_output_tokens === 'number' ? opts.max_output_tokens : 60
+        temperature: 0.2,
+        max_output_tokens: 600,
       })
     });
 
@@ -61,8 +61,8 @@ export async function pront(prompt, opts = {}) {
 
     // Fallback defensivo por si cambia el shape.
     const content =
-      data?.output?.[0]?.content?.map?.((c) => c?.text).filter(Boolean).join('') ??
-      data?.choices?.[0]?.message?.content;
+      data?.output?.[1]?.content?.map?.((c) => c?.text).filter(Boolean).join('') ??
+      data?.choices?.[1]?.message?.content;
 
     if (typeof content !== 'string' || !content.trim()) return 'FALSE';
     return content.trim();

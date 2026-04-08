@@ -61,7 +61,10 @@ export async function read(event) {
   // Escribe: !ai tu pregunta
   // Nota: la función se llama "pront" porque así la pediste.
   // eslint-disable-next-line no-use-before-define
-  if (event.command?.name === 'ia') {
+  if (
+    event.command?.name === 'ia'
+    ||event.command?.name === 'gpt'
+  ) {
     const question = event.command.args.join(' ').trim();
     if (!question) {
       await event.send('Uso: !ai <pregunta>');
