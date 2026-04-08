@@ -67,6 +67,43 @@ export async function read(event) {
   if (event.command.name === 'hola') {
     const name = event.user.displayName ?? event.user.username ?? 'chat';
     await event.send(`Hola, @${name}`);
+    return;
+  }
+
+  // Soporta dados d3, d4, ..., d10, ..., d20
+  // d10 es el único que va de 0-9, los demás de 1-n
+  const diceMatch = event.command.name.match(/^d(3|4|6|8|10|12|20)$/);
+  if (diceMatch) {
+    const type = parseInt(diceMatch[1], 10);
+
+    // Determinar número de dados (1 a 5)
+    let numDice = 1;
+    if (
+      event.command.args.length > 0 &&
+      /^\d+$/.test(event.command.args[0])
+    ) {
+      numDice = Math.min(Math.max(parseInt(event.command.args[0], 10), 1), 5);
+    }
+
+    // Calcular resultado
+    const rolls = [];
+    for (let i = 0; i < numDice; i++) {
+      if (type === 10) {
+        // d10 (0-9)
+        rolls.push(`<${Math.floor(Math.random() * 10)}>`);
+      } else {
+        // dN (1-N)
+        rolls.push(`<${Math.floor(Math.random() * type) + 1}>`);
+      }
+    }
+    await event.send(rolls.join(' '));
+    return;
+  }
+
+  //PREESCRITO
+  if (event.command.name === 'elPingEs') {
+    await event.send('Un comando que le mando a mi bot privado para probar si esta funcionando o no, si funciona deberia responder pong... sin más');
+    return;
   }
 }
 

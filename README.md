@@ -50,6 +50,12 @@ npm run auth:twitch
 npm run dev
 ```
 
+Puedes sobreescribir el canal por parámetro:
+
+```bash
+npm run dev -- nombrecanal
+```
+
 En el chat de tu canal prueba:
 
 - `!ping` → `pong`

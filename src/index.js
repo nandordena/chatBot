@@ -2,7 +2,7 @@ import 'dotenv/config';
 import tmi from 'tmi.js';
 import { read } from './sheet.js';
 
-const requiredEnv = ['TWITCH_BOT_USERNAME', 'TWITCH_OAUTH_TOKEN', 'TWITCH_CHANNEL'];
+const requiredEnv = ['TWITCH_BOT_USERNAME', 'TWITCH_OAUTH_TOKEN'];
 const missing = requiredEnv.filter((k) => !process.env[k]);
 if (missing.length) {
   console.error(
@@ -15,7 +15,18 @@ if (missing.length) {
 
 const BOT_USERNAME = process.env.TWITCH_BOT_USERNAME;
 const OAUTH_TOKEN = process.env.TWITCH_OAUTH_TOKEN;
-const CHANNEL_NAME = String(process.env.TWITCH_CHANNEL).replace(/^#/, '');
+const CHANNEL_ARG = process.argv[2];
+const CHANNEL_NAME = String(CHANNEL_ARG ?? process.env.TWITCH_CHANNEL ?? '').replace(/^#/, '');
+
+if (!CHANNEL_NAME || CHANNEL_NAME === 'undefined' || CHANNEL_NAME === 'null') {
+  console.error(
+    'Falta TWITCH_CHANNEL o argumento de canal.\n' +
+      'Ejemplos:\n' +
+      '- npm run dev -- muntidev\n' +
+      '- set TWITCH_CHANNEL=muntidev && npm run dev'
+  );
+  process.exit(1);
+}
 
 const client = new tmi.Client({
   options: { debug: true },
