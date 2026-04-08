@@ -56,7 +56,30 @@
  * @param {ChatEvent} event
  */
 export async function read(event) {
-  // Ejemplo mínimo: comandos con prefijo "!"
+
+  // IA (Hypereal): ejemplo de uso
+  // Escribe: !ai tu pregunta
+  // Nota: la función se llama "pront" porque así la pediste.
+  // eslint-disable-next-line no-use-before-define
+  if (event.command?.name === 'ia') {
+    const question = event.command.args.join(' ').trim();
+    if (!question) {
+      await event.send('Uso: !ai <pregunta>');
+      return;
+    }
+    const out = await pront(question);
+    await event.send(out === 'FALSE' ? 'no se  ┑(o. o)┍' : out);
+    return;
+  }
+
+  // REACCIONES (no comando)
+  // Ojo: `event.message` y `event.text` son strings. No existe `event.message.content`.
+  if (event.text.toLowerCase().includes('nandobot')) {
+    await event.send('@'+event.user.displayName+' Me has llamado? ¡Diga melon!');
+    return;
+  }
+
+  // Comandos con prefijo "!"
   if (!event.command.isCommand) return;
 
   if (event.command.name === 'ping') {
@@ -101,9 +124,13 @@ export async function read(event) {
   }
 
   //PREESCRITO
-  if (event.command.name === 'elPingEs') {
+  if (event.command.name === 'elpinges') {
     await event.send('Un comando que le mando a mi bot privado para probar si esta funcionando o no, si funciona deberia responder pong... sin más');
     return;
   }
+
 }
+
+// Import al final para que sea fácil “hojear” lógica arriba.
+import { pront } from './ai/groq.js';
 

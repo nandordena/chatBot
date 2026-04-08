@@ -56,10 +56,26 @@ Puedes sobreescribir el canal por parámetro:
 npm run dev -- nombrecanal
 ```
 
+Ejecutar con debug en [chrome://inspect](chrome://inspect)
+```bash
+node --inspect --watch src/index.js nombrecanal
+```
+
 En el chat de tu canal prueba:
 
 - `!ping` → `pong`
 - `!hola` → saludo
+
+## IA (Groq)
+
+1) Crea una API key en Groq y ponla en tu `.env`:
+
+- `GROQ_API_KEY`
+- `GROQ_MODEL` (por defecto `openai/gpt-oss-20b`)
+
+2) En el chat:
+
+- `!ia <pregunta>` → responde con la salida de la IA o `FALSE` si falla.
 
 ## Estructura
 

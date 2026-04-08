@@ -84,7 +84,7 @@ client.on('message', async (channel, tags, message, self) => {
   const send = async (outText, opts = {}) => {
     if (!outText || typeof outText !== 'string') return;
 
-    const trimmed = outText.trim();
+    const trimmed = "🤖 " + outText.trim();
     if (!trimmed) return;
 
     // tmi.js soporta `client.say(channel, text)`.
