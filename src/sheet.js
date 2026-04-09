@@ -127,42 +127,68 @@ export async function read(event) {
     return;
   }
 
-  // Countdown: !countdown [numero]
+  // Countdown: !countdown [numero] o !countdown [numero]m (minutos)
   if (event.command.name === 'countdown') {
     const numStr = event.command.args[0];
-    if (!numStr || !/^\d+$/.test(numStr)) {
-      await event.send('Uso: !countdown <segundos>');
+    if (!numStr) {
+      await event.send('Uso: !countdown <segundos> o !countdown <minutos>m');
       return;
     }
-    const seconds = Math.min(Math.max(parseInt(numStr, 10), 1), 3600); // max 1 hora
-    await event.send(`⏱️ Cuenta regresiva: ${seconds}s`);
 
-    // Calcular intervalo según tiempo total
-    let interval;
-    if (seconds <= 10) {
-      interval = 1000; // cada segundo
-    } else if (seconds <= 60) {
-      interval = 10000; // cada 10 segundos
-    } else if (seconds <= 120) {
-      interval = 30000; // cada 30 segundos
-    } else if (seconds <= 600) {
-      interval = 60000; // cada minuto
-    } else if (seconds <= 1800) {
-      interval = 300000; // cada 5 minutos
+    let seconds;
+    if (numStr.toLowerCase().endsWith('m')) {
+      // Formato minutos: !countdown 5m
+      const minStr = numStr.slice(0, -1);
+      if (!/^\d+$/.test(minStr)) {
+        await event.send('Uso: !countdown <segundos> o !countdown <minutos>m');
+        return;
+      }
+      seconds = Math.min(Math.max(parseInt(minStr, 10), 1), 60) * 60; // max 60 minutos
     } else {
-      interval = 600000; // cada 10 minutos
+      // Formato segundos: !countdown 60
+      if (!/^\d+$/.test(numStr)) {
+        await event.send('Uso: !countdown <segundos> o !countdown <minutos>m');
+        return;
+      }
+      seconds = Math.min(Math.max(parseInt(numStr, 10), 1), 3600); // max 1 hora
     }
 
+    await event.send(`⏱️ Cuenta regresiva: ${seconds}s`);
+
+    // Función para formatear segundos a HH:MM:SS
+    const formatTime = (totalSeconds) => {
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = Math.floor(totalSeconds % 60);
+      if (h > 0) {
+        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
+    // Función para calcular intervalo según tiempo restante
+    const getInterval = (remaining) => {
+      if (remaining <= 5) return 1000;      // cada segundo
+      if (remaining <= 10) return 5000;      // cada segundo
+      if (remaining <= 30) return 10000;     // cada 10 segundos
+      if (remaining <= 60) return 30000;     // cada 30 segundos
+      if (remaining <= 600) return 60000;    // cada minuto
+      if (remaining <= 1800) return 300000;  // cada 5 minutos
+      return 600000;                         // cada 10 minutos
+    };
+
     let remaining = seconds;
-    const countdownInterval = setInterval(async () => {
+    const runCountdown = async () => {
+      const interval = getInterval(remaining);
       remaining -= interval / 1000;
       if (remaining > 0) {
-        await event.send(`⏱️ ${remaining}s`);
+        await event.send(`⏱️ ${formatTime(remaining)}`);
+        global._countdownTimeout = setTimeout(runCountdown, getInterval(remaining));
       } else {
-        clearInterval(countdownInterval);
         await event.send('¡Tiempo!');
       }
-    }, interval);
+    };
+    const countdownTimeout = setTimeout(runCountdown, getInterval(seconds));
 
     // Guardar intervalo para poder pararlo
     global._countdownInterval = countdownInterval;
