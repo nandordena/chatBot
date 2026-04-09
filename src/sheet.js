@@ -195,14 +195,70 @@ export async function read(event) {
     return;
   }
 
-  // Stop: !stop (para la cuenta regresiva)
+  // Timeout: !timeout [segundos] o [minutos]m [texto] - envía texto cada X tiempo
+  if (event.command.name === 'timeout') {
+    const firstArg = event.command.args[0];
+    const restArgs = event.command.args.slice(1);
+
+    if (!firstArg || restArgs.length === 0) {
+      await event.send('Uso: !timeout <segundos> <texto> o !timeout <minutos>m <texto>');
+      return;
+    }
+
+    let intervalMs;
+    if (firstArg.toLowerCase().endsWith('m')) {
+      // Formato minutos: !timeout 5m texto
+      const minStr = firstArg.slice(0, -1);
+      if (!/^\d+$/.test(minStr)) {
+        await event.send('Uso: !timeout <segundos> <texto> o !timeout <minutos>m <texto>');
+        return;
+      }
+      const minutes = Math.min(Math.max(parseInt(minStr, 10), 1), 60);
+      intervalMs = minutes * 60 * 1000;
+    } else {
+      // Formato segundos: !timeout 30 texto
+      if (!/^\d+$/.test(firstArg)) {
+        await event.send('Uso: !timeout <segundos> <texto> o !timeout <minutos>m <texto>');
+        return;
+      }
+      const seconds = Math.min(Math.max(parseInt(firstArg, 10), 1), 3600);
+      intervalMs = seconds * 1000;
+    }
+
+    const text = restArgs.join(' ');
+
+    // Enviar primer mensaje
+    await event.send(text);
+
+    // Guardar el intervalo para poder pararlo
+    global._timeoutInterval = setInterval(async () => {
+      await event.send(text);
+    }, intervalMs);
+
+    await event.send(`⏱️ Timeout iniciado: cada ${firstArg} - !stop para detener`);
+    return;
+  }
+
+  // Stop: !stop (para la cuenta regresiva y el timeout)
   if (event.command.name === 'stop') {
+    let stopped = false;
+
     if (global._countdownInterval) {
       clearInterval(global._countdownInterval);
       global._countdownInterval = null;
-      await event.send('⏹️ Cuenta regresiva detenida');
+      stopped = true;
+    }
+
+    if (global._timeoutInterval) {
+      clearInterval(global._timeoutInterval);
+      global._timeoutInterval = null;
+      stopped = true;
+    }
+
+    if (stopped) {
+      await event.send('⏹️ Proceso(s) detenido(s)');
     } else {
-      await event.send('No hay cuenta regresiva activa');
+      await event.send('No hay proceso activo');
     }
     return;
   }
