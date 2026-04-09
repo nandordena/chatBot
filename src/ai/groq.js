@@ -47,7 +47,7 @@ export async function pront(prompt, opts = {}) {
           }
         ],
         // Estos campos existen en la Responses API OpenAI-compatible.
-        temperature: 0.2,
+        temperature: 0.1,
         max_output_tokens: 600,
       })
     });

@@ -63,7 +63,7 @@ export async function read(event) {
   // eslint-disable-next-line no-use-before-define
   if (
     event.command?.name === 'ia'
-    ||event.command?.name === 'gpt'
+    || event.command?.name === 'gpt'
   ) {
     const question = event.command.args.join(' ').trim();
     if (!question) {
@@ -72,13 +72,6 @@ export async function read(event) {
     }
     const out = await pront(question);
     await event.send(out === 'FALSE' ? 'no se  ┑(o. o)┍' : out);
-    return;
-  }
-
-  // REACCIONES (no comando)
-  // Ojo: `event.message` y `event.text` son strings. No existe `event.message.content`.
-  if (event.text.toLowerCase().includes('nandobot')) {
-    await event.send('@'+event.user.displayName+' Me has llamado? ¡Diga melon!');
     return;
   }
 
@@ -126,9 +119,24 @@ export async function read(event) {
     return;
   }
 
+  if (event.command.name === 'coin') {
+    const result = Math.random() < 0.5 ? 'cara' : 'cruz';
+    const face = result === 'cara' ? '((ツ))' : '((✗))';
+    //await event.send(`${face} ${result}`);
+    await event.send(`${face}`);
+    return;
+  }
+
   //PREESCRITO
   if (event.command.name === 'elpinges') {
     await event.send('Un comando que le mando a mi bot privado para probar si esta funcionando o no, si funciona deberia responder pong... sin más');
+    return;
+  }
+
+  // REACCIONES (no comando)
+  // Ojo: `event.message` y `event.text` son strings. No existe `event.message.content`.
+  if (event.text.toLowerCase().includes('nandobot')) {
+    await event.send('@' + event.user.displayName + ' Me has llamado? ¡Diga melon!');
     return;
   }
 
