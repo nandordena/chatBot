@@ -51,15 +51,19 @@ export async function pront(prompt, opts = {}) {
         max_output_tokens: 600,
       })
     });
-
     const data = await res.json().catch(() => null);
-    if (!res.ok || !data) return 'FALSE';
+    if (!res.ok || !data) {
+      console.log('Groq API error:', res.status, data);
+      return 'FALSE';
+    }
 
     // En Groq Responses suele venir `output_text` (según su doc).
     const outText = data?.output_text;
     if (typeof outText === 'string' && outText.trim()) return outText.trim();
 
     // Fallback defensivo por si cambia el shape.
+
+    // TODO: arreglar cuando llega con parallel_tool_calls
     const content =
       data?.output?.[1]?.content?.map?.((c) => c?.text).filter(Boolean).join('') ??
       data?.choices?.[1]?.message?.content;

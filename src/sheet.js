@@ -127,6 +127,60 @@ export async function read(event) {
     return;
   }
 
+  // Countdown: !countdown [numero]
+  if (event.command.name === 'countdown') {
+    const numStr = event.command.args[0];
+    if (!numStr || !/^\d+$/.test(numStr)) {
+      await event.send('Uso: !countdown <segundos>');
+      return;
+    }
+    const seconds = Math.min(Math.max(parseInt(numStr, 10), 1), 3600); // max 1 hora
+    await event.send(`⏱️ Cuenta regresiva: ${seconds}s`);
+
+    // Calcular intervalo según tiempo total
+    let interval;
+    if (seconds <= 10) {
+      interval = 1000; // cada segundo
+    } else if (seconds <= 60) {
+      interval = 10000; // cada 10 segundos
+    } else if (seconds <= 120) {
+      interval = 30000; // cada 30 segundos
+    } else if (seconds <= 600) {
+      interval = 60000; // cada minuto
+    } else if (seconds <= 1800) {
+      interval = 300000; // cada 5 minutos
+    } else {
+      interval = 600000; // cada 10 minutos
+    }
+
+    let remaining = seconds;
+    const countdownInterval = setInterval(async () => {
+      remaining -= interval / 1000;
+      if (remaining > 0) {
+        await event.send(`⏱️ ${remaining}s`);
+      } else {
+        clearInterval(countdownInterval);
+        await event.send('¡Tiempo!');
+      }
+    }, interval);
+
+    // Guardar intervalo para poder pararlo
+    global._countdownInterval = countdownInterval;
+    return;
+  }
+
+  // Stop: !stop (para la cuenta regresiva)
+  if (event.command.name === 'stop') {
+    if (global._countdownInterval) {
+      clearInterval(global._countdownInterval);
+      global._countdownInterval = null;
+      await event.send('⏹️ Cuenta regresiva detenida');
+    } else {
+      await event.send('No hay cuenta regresiva activa');
+    }
+    return;
+  }
+
   //PREESCRITO
   if (event.command.name === 'elpinges') {
     await event.send('Un comando que le mando a mi bot privado para probar si esta funcionando o no, si funciona deberia responder pong... sin más');
