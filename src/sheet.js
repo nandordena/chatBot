@@ -63,7 +63,9 @@ export async function read(event) {
   // eslint-disable-next-line no-use-before-define
   if (
     event.command?.name === 'ia'
+    || event.command?.name === 'ia,'
     || event.command?.name === 'gpt'
+    || event.command?.name === 'gpt,'
   ) {
     const question = event.command.args.join(' ').trim();
     if (!question) {
@@ -74,9 +76,6 @@ export async function read(event) {
     await event.send(out === 'FALSE' ? 'no se  ┑(o. o)┍' : out);
     return;
   }
-
-  // Comandos con prefijo "!"
-  if (!event.command.isCommand) return;
 
   if (event.command.name === 'ping') {
     await event.send('pong');
@@ -264,8 +263,18 @@ export async function read(event) {
   }
 
   //PREESCRITO
-  if (event.command.name === 'elpinges') {
-    await event.send('Un comando que le mando a mi bot privado para probar si esta funcionando o no, si funciona deberia responder pong... sin más');
+  if (event.command.name === 'elping') {
+    await event.send('El ping es comando basico que me mandan para saber si respondo, y yo respondo "pong" cuando me etero o cuando me mandan el comando bien escrito \\(¬ - ¬)/');
+    return;
+  }
+  if (event.command.name === 'donde') {
+    await event.send('Nando nació en Argentina, pero estudio y vive en españa hace años');
+    return;
+  }
+
+  // Comandos: !comandos (lista de comandos disponibles)
+  if (event.command.name === 'comandos') {
+    await event.send('📋 Comandos disponibles: !ping, !hola, !d[3-20], !coin, !countdown, !timeout, !stop, !ia, !gpt, !elping, !donde');
     return;
   }
 
