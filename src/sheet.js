@@ -194,8 +194,8 @@ export async function read(event) {
     return;
   }
 
-  // Timeout: !timeout [segundos] o [minutos]m [texto] - envía texto cada X tiempo
-  if (event.command.name === 'timeout') {
+  // Interval: !interval [segundos] o [minutos]m [texto] - envía texto cada X tiempo
+  if (event.command.name === 'interval') {
     const firstArg = event.command.args[0];
     const restArgs = event.command.args.slice(1);
 
@@ -209,15 +209,15 @@ export async function read(event) {
       // Formato minutos: !timeout 5m texto
       const minStr = firstArg.slice(0, -1);
       if (!/^\d+$/.test(minStr)) {
-        await event.send('Uso: !timeout <segundos> <texto> o !timeout <minutos>m <texto>');
+        await event.send('Uso: !interval <segundos> <texto> o !timeout <minutos>m <texto>');
         return;
       }
       const minutes = Math.min(Math.max(parseInt(minStr, 10), 1), 60);
       intervalMs = minutes * 60 * 1000;
     } else {
-      // Formato segundos: !timeout 30 texto
+      // Formato segundos: !interval 30 texto
       if (!/^\d+$/.test(firstArg)) {
-        await event.send('Uso: !timeout <segundos> <texto> o !timeout <minutos>m <texto>');
+        await event.send('Uso: !interval <segundos> <texto> o !interval <minutos>m <texto>');
         return;
       }
       const seconds = Math.min(Math.max(parseInt(firstArg, 10), 1), 3600);
@@ -234,11 +234,11 @@ export async function read(event) {
       await event.send(text);
     }, intervalMs);
 
-    await event.send(`⏱️ Timeout iniciado: cada ${firstArg} - !stop para detener`);
+    await event.send(`⏱️ Intervalo iniciado: cada ${firstArg} - !stop para detener`);
     return;
   }
 
-  // Stop: !stop (para la cuenta regresiva y el timeout)
+  // Stop: !stop (para la cuenta regresiva y el intervalo)
   if (event.command.name === 'stop') {
     let stopped = false;
 
@@ -274,7 +274,7 @@ export async function read(event) {
 
   // Comandos: !comandos (lista de comandos disponibles)
   if (event.command.name === 'comandos') {
-    await event.send('📋 Comandos disponibles: !ping, !hola, !d[3-20], !coin, !countdown, !timeout, !stop, !ia, !gpt, !elping, !donde');
+    await event.send('📋 Comandos disponibles: !ping, !hola, !d[3-20], !coin, !countdown, !intervalo, !stop, !ia, !gpt, !elping, !donde');
     return;
   }
 
