@@ -59,7 +59,8 @@
 // Función helper para verificar si el usuario es el Admin
 const isAdmin = (event) => {
   const username = event.user.username?.toLowerCase();
-  return username === process.env.ADMIN_USERNAME?.toLowerCase();
+  const channelName = event.channel?.replace('#', '').toLowerCase();
+  return username === process.env.ADMIN_USERNAME?.toLowerCase() || username === channelName;
 };
 
 export async function read(event) {
@@ -203,6 +204,10 @@ export async function read(event) {
 
   // Interval: !interval [segundos] o [minutos]m [texto] - envía texto cada X tiempo
   if (event.command.name === 'interval') {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
     const firstArg = event.command.args[0];
     const restArgs = event.command.args.slice(1);
 
@@ -247,6 +252,10 @@ export async function read(event) {
 
   // Stop: !stop (para la cuenta regresiva y el intervalo)
   if (event.command.name === 'stop') {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
     let stopped = false;
 
     if (global._countdownInterval) {
@@ -268,10 +277,12 @@ export async function read(event) {
     }
     return;
   }
+
   if (event.command.name === 'cartas') {
     await event.send('No es verdad , las cartas no existen... o sí? (¬ - ¬)');
     return;
   }
+
   if (event.command.name === 'patata') {
     await event.send('!patata dorada');
     await event.send('🥔  ');
@@ -283,6 +294,7 @@ export async function read(event) {
     await event.send('El ping es comando basico que me mandan para saber si respondo, y yo respondo "pong" cuando me etero o cuando me mandan el comando bien escrito \\(¬ - ¬)/');
     return;
   }
+
   if (event.command.name === 'donde') {
     await event.send('Nando nació en Argentina, pero estudio y vive en españa hace años');
     return;
@@ -345,6 +357,102 @@ export async function read(event) {
     return;
   }
 
+  // !jointo <nombrecanal> - Hacer que el bot cambie a otro canal (solo admin)
+  if (event.command.name === 'jointo') {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
+    const newChannel = event.command.args[0];
+    if (!newChannel) {
+      await event.send('Uso: !jointo <nombrecanal>');
+      return;
+    }
+    const channelName = newChannel.startsWith('#') ? newChannel : `#${newChannel}`;
+    try {
+      await event.client.join(channelName);
+    } catch (err) {
+      console.info(`No pude unirme al canal: ${err.message}`);
+    }
+    return;
+  }
+
+  // !leave - Hacer que el bot abandone el canal actual (solo admin)
+  if (event.command.name === 'leave') {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
+    try {
+      await event.client.part(event.channel);
+      await event.send(`nandobot ha salido de ${event.channel}...`);
+    } catch (err) {
+      console.info(`No pude salir del canal: ${err.message}`);
+    }
+    return;
+  }
+
+
+  //autocomander
+
+  //////// buildingloud ////////
+  if (event.command.name === 'kingsbane') {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
+    await event.send('!interval 5m !anclar');
+  }
+  if (event.text.includes('@nandordena → ')) {
+    // Parsear inventario del mensaje de mochila
+    const inventoryMatch = event.text.match(/🎒 @\w+ → \[(.*?)\] \| 📦 (\d+)\/(\d+)/);
+    if (inventoryMatch) {
+      const itemsStr = inventoryMatch[1];
+      const used = parseInt(inventoryMatch[2], 10);
+      const capacity = parseInt(inventoryMatch[3], 10);
+
+      // Parsear items (formato: "Enredadera x2 · Madera x5")
+      const items = {};
+      const itemMatches = itemsStr.matchAll(/(\w+)\s+x(\d+)/g);
+      for (const match of itemMatches) {
+        items[match[1]] = parseInt(match[2], 10);
+      }
+
+      // Guardar en variable global
+      global._inventory = {
+        items,
+        used,
+        capacity
+      };
+
+      console.log('Inventario actualizado:', global._inventory);
+    }
+    // Definimos grupos de materiales por bioma según las fuentes
+    const stock = global._inventory.items;
+
+    const materiales = {
+      bosque: (stock["Madera"] || 0) + (stock["Madera roble"] || 0) + (stock["Enredadera"] || 0) + (stock["Resina"] || 0),
+      mina: (stock["Piedra"] || 0) + (stock["Cobre"] || 0) + (stock["Hierro"] || 0) + (stock["Carbon"] || 0) + (stock["Plata"] || 0),
+      caza: (stock["Hueso"] || 0) + (stock["Cuero"] || 0) + (stock["Grasa"] || 0) + (stock["Colmillo"] || 0),
+      pesca: (stock["Pescado"] || 0) + (stock["Chatarra"] || 0) + (stock["Perla"] || 0) + (stock["Escama sirena"] || 0) + (stock["Marisco"] || 0)
+    };
+
+    // Regla de decisión
+    if (global._inventory.used / global._inventory.capacity >= 0.8) {
+      // Prioridad: Vaciar mochila para evitar la Ira de G.E.N.I.O. [4]
+      await event.send('!votar ciudadela');
+    } else {
+      // Selecciona la zona con el valor numérico más bajo en el objeto 'materiales'
+      const zonaDestino = Object.keys(materiales).reduce((a, b) => materiales[a] < materiales[b] ? a : b);
+
+      await event.send(`!votar ${zonaDestino}`);
+    }
+  }
+  if (event.text.includes("🗳️ [G.E.N.I.O.] ¡Votación ABIERTA! ")) {
+    await event.send('!inventario');
+    await event.send('!almacen');
+  }
+  ///////////////////////////////
 }
 
 // Import al final para que sea fácil “hojear” lógica arriba.
