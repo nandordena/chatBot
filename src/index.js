@@ -21,9 +21,9 @@ const CHANNEL_NAME = String(CHANNEL_ARG ?? process.env.TWITCH_CHANNEL ?? '').rep
 if (!CHANNEL_NAME || CHANNEL_NAME === 'undefined' || CHANNEL_NAME === 'null') {
   console.error(
     'Falta TWITCH_CHANNEL o argumento de canal.\n' +
-      'Ejemplos:\n' +
-      '- npm run dev -- muntidev\n' +
-      '- set TWITCH_CHANNEL=muntidev && npm run dev'
+    'Ejemplos:\n' +
+    '- npm run dev -- muntidev\n' +
+    '- set TWITCH_CHANNEL=muntidev && npm run dev'
   );
   process.exit(1);
 }
@@ -84,7 +84,7 @@ client.on('message', async (channel, tags, message, self) => {
   const send = async (outText, opts = {}) => {
     if (!outText || typeof outText !== 'string') return;
 
-    const trimmed = "🤖 " + outText.trim();
+    const trimmed = outText.trim() + " [🤖]";
     if (!trimmed) return;
 
     // tmi.js soporta `client.say(channel, text)`.
@@ -160,8 +160,7 @@ client.on('messagedeleted', (channel, username, deletedMessage, userstate) => {
 
 client.on('timeout', (channel, username, reason, duration, userstate) => {
   console.log(
-    `[timeout] ${channel} user=${username} duration=${duration}s reason=${reason ?? ''} id=${
-      userstate?.['target-msg-id'] ?? 'n/a'
+    `[timeout] ${channel} user=${username} duration=${duration}s reason=${reason ?? ''} id=${userstate?.['target-msg-id'] ?? 'n/a'
     }`
   );
 });

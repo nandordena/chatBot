@@ -25,7 +25,8 @@ export async function pront(prompt, opts = {}) {
     if (typeof prompt !== 'string' || !prompt.trim()) return 'FALSE';
 
     // Permite añadir un prefijo al texto generado por IA, configurable por variable de entorno
-    const IA_CONTEXT = process.env.GROQ_CONTEXT ?? "";
+    const IA_CONTEXT = opts.context ?? process.env.GROQ_CONTEXT ?? "";
+    const IA_OUTPUT_MAX = opts.max_output_tokens ?? 600;
 
     const base = API_BASE.replace(/\/$/, '');
     const res = await fetch(`${base}/responses`, {
@@ -48,7 +49,7 @@ export async function pront(prompt, opts = {}) {
         ],
         // Estos campos existen en la Responses API OpenAI-compatible.
         temperature: 0.2,
-        max_output_tokens: 600,
+        max_output_tokens: IA_OUTPUT_MAX,
       })
     });
     const data = await res.json().catch(() => null);

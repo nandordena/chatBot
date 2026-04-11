@@ -55,6 +55,13 @@
  *
  * @param {ChatEvent} event
  */
+
+// Función helper para verificar si el usuario es el Admin
+const isAdmin = (event) => {
+  const username = event.user.username?.toLowerCase();
+  return username === process.env.ADMIN_USERNAME?.toLowerCase();
+};
+
 export async function read(event) {
 
   // IA (Hypereal): ejemplo de uso
@@ -261,6 +268,15 @@ export async function read(event) {
     }
     return;
   }
+  if (event.command.name === 'cartas') {
+    await event.send('No es verdad , las cartas no existen... o sí? (¬ - ¬)');
+    return;
+  }
+  if (event.command.name === 'patata') {
+    await event.send('!patata dorada');
+    await event.send('🥔  ');
+    return;
+  }
 
   //PREESCRITO
   if (event.command.name === 'elping') {
@@ -282,6 +298,50 @@ export async function read(event) {
   // Ojo: `event.message` y `event.text` son strings. No existe `event.message.content`.
   if (event.text.toLowerCase().includes('nandobot')) {
     await event.send('@' + event.user.displayName + ' Me has llamado? ¡Diga melon!');
+    return;
+  }
+
+  if (event.command.name === 'haz') {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
+    const question = event.command.args.join(' ').trim();
+    if (!question) {
+      await event.send('Uso: !ai <pregunta>');
+      return;
+    }
+    const out = await pront(question, {
+      context: `
+        eres un asistente de escritura en un chat de twitch / youtube / u otras plataformas,
+        ayudas a escribir mensajes cortos y divertidos para responder a los usuarios, el tono es informal y gracioso,
+        y a veces un poco irreverente.
+        como respuesta devolveras un array en json sin comillas antes o despues del array
+        para no interferir con comando JSON.parse de NODE; ejemplo [<message1>,<message2>].
+        con cada uno de los chats que quieres que se publique y el para un softwar 
+        conectado a la api que recorrera ese array y mandara cada uno de estos mensajes. 
+        en el chat esto se activa con el comando !haz por lo que se espera que tu rellenes 
+        este array con resultados de la orden a hacer.
+        Si te piden que escibas comandos , no añadas comentarios despues de la ejecucion del comando,
+        si quieres hacer comentarios hazlo en un linea nueva.
+      `
+      , max_output_tokens: 2000
+    });
+    let responses;
+    try {
+      responses = JSON.parse(out);
+    } catch (e) {
+      await event.send(out === 'FALSE' ? 'no se hacer esto (╯‵□′)╯︵┻━┻' : out);
+      return;
+    }
+
+    if (Array.isArray(responses)) {
+      for (const msg of responses) {
+        await event.send(msg);
+      }
+    } else {
+      await event.send(out);
+    }
     return;
   }
 
