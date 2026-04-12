@@ -98,7 +98,11 @@ export async function read(event) {
 
   // Soporta dados d3, d4, ..., d10, ..., d20
   // d10 es el único que va de 0-9, los demás de 1-n
-  const diceMatch = event.command.name.match(/^d(3|4|6|8|10|12|20)$/);
+  var diceMatch = false;
+  if(event?.command?.name){
+    diceMatch = event.command.name.match(/^d(3|4|6|8|10|12|20)$/);
+  }
+  
   if (diceMatch) {
     const type = parseInt(diceMatch[1], 10);
 
@@ -295,12 +299,12 @@ export async function read(event) {
     return;
   }
 
-  if (event.command.name === 'donde') {
+  if (event.command.name === 'dedondeesnando') {
     await event.send('Nando nació en Argentina, pero estudio y vive en españa hace años');
     return;
   }
 
-  // Comandos: !comandos (lista de comandos disponibles)
+  // Comandos: !nandocomandos (lista de comandos disponibles)
   if (event.command.name === 'comandos') {
     await event.send('📋 Comandos disponibles: !ping, !hola, !d[3-20], !coin, !countdown, !intervalo, !stop, !ia, !gpt, !elping, !donde');
     return;
@@ -395,7 +399,9 @@ export async function read(event) {
 
   //autocomander
 
-  //////// buildingloud ////////
+  //////// kingsbane ///////////
+  global.kingsbane = {};
+  global.kingsbane.votar = false;
   if (event.command.name === 'kingsbane') {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
@@ -403,9 +409,9 @@ export async function read(event) {
     }
     await event.send('!interval 5m !anclar');
   }
-  if (event.text.includes('@nandordena → ')) {
+  if (event.text.includes('@nandordena →')) {
     // Parsear inventario del mensaje de mochila
-    const inventoryMatch = event.text.match(/🎒 @\w+ → \[(.*?)\] \| 📦 (\d+)\/(\d+)/);
+    const inventoryMatch = event.text.match(/.*@\w+ → \[(.*?)\] \| 📦 (\d+)\/(\d+)/);
     if (inventoryMatch) {
       const itemsStr = inventoryMatch[1];
       const used = parseInt(inventoryMatch[2], 10);
@@ -440,17 +446,33 @@ export async function read(event) {
     // Regla de decisión
     if (global._inventory.used / global._inventory.capacity >= 0.8) {
       // Prioridad: Vaciar mochila para evitar la Ira de G.E.N.I.O. [4]
-      await event.send('!votar ciudadela');
+      if(global._site != "Ciudadela" & global.kingsbane.votar) await event.send('!votar ciudadela');
     } else {
       // Selecciona la zona con el valor numérico más bajo en el objeto 'materiales'
       const zonaDestino = Object.keys(materiales).reduce((a, b) => materiales[a] < materiales[b] ? a : b);
 
-      await event.send(`!votar ${zonaDestino}`);
+      if(global._site.toLowerCase != zonaDestino 
+      & global.kingsbane.votar) await event.send(`!votar ${zonaDestino}`);
     }
   }
-  if (event.text.includes("🗳️ [G.E.N.I.O.] ¡Votación ABIERTA! ")) {
-    await event.send('!inventario');
-    await event.send('!almacen');
+  if (event.text.includes("¡Votación ABIERTA! ")) {
+    global._site = event.text.match(/(\w+).\s¿Cambio/g);
+    if(global._site == "Ciudadela") await event.send('!almacen');
+    else await event.send('!mochila');
+  }
+  var kingsbaneMatch = false;
+  if(event?.command?.name){
+    kingsbaneMatch = event.command.name.match(/^kingsbane\.(\w+)$/);
+  }
+  
+  if (kingsbaneMatch) {
+      attrMatch = event.command.name.match(/^kingsbane\.\w+\s(\w+)$/);
+      if (attrMatch) {
+          if(attrMatch=="false") attrMatch = false;
+          if(attrMatch=="true") attrMatch = true;
+          global.kingsbane[kingsbaneMatch]=attrMatch;
+      }
+      
   }
   ///////////////////////////////
 }
