@@ -145,6 +145,30 @@ export async function read(event) {
     return;
   }
 
+  //ruleta !ruleta <item1>,<item2>,...
+  if (event.command.name === 'ruleta' && checkCooldown('ruleta') && checkCooldown('ruleta')) {
+    const items = event.command.args.join(' ').split(',');
+    if (items.length < 2) {
+      await event.send('Uso: !ruleta <item1>,<item2>,(...)');
+      return;
+    }
+    const item = items[Math.floor(Math.random() * items.length)];
+    await event.send(item);
+    return;
+  }
+
+  //calc !calc <numero1> <operador> <numero2>
+  if (event.command.name === 'calc' && checkCooldown('calc') && checkCooldown('calc')) {
+    const items = event.command.args.join(' ').split(',');
+    if (items.length < 2) {
+      await event.send('Uso: !calc <numero1><operador> <numero2>');
+      return;
+    }
+    const item = items[Math.floor(Math.random() * items.length)];
+    await event.send(item);
+    return;
+  }
+
   if (event.command.name === 'coin' && checkCooldown('coin')) {
     const result = Math.random() < 0.5 ? 'cara' : 'cruz';
     const face = result === 'cara' ? '((ツ))' : '((✗))';
