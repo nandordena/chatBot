@@ -472,29 +472,20 @@ export async function read(event) {
 
   global.kingsbane.forja = [
     {
-      "nombre": "Mochipocha",
-      "materiales": { "piel": 20, "enredadera": 10 },
-      "oro": 100
-    },
-    {
       "nombre": "Fardo",
       "materiales": { "cuero": 25, "enredadera": 20, "mochipocha": 1 },
       "oro": 250
     },
     {
-      "nombre": "Hacha de Piedra",
-      "materiales": { "madera": 20, "piedra": 20, "enredadera": 5 },
-      "oro": 100
-    },
-    {
-      "nombre": "Hacha de Hueso",
-      "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "hacha_piedra": 1 },
-      "oro": 250
-    },
-    {
-      "nombre": "Lanza de Hueso",
+      "nombre": "lanza_hueso",
       "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "lanza_piedra": 1 },
       "oro": 250
+    },
+    {
+      "nombre": "Cuero",
+      "cantidad": "todo",
+      "materiales": { "piel": 5, },
+      "oro": 0
     },
   ];
   if (event.text.includes("La colmena se mueve a: 🏰 La Ciudadela")) {
@@ -515,11 +506,36 @@ export async function read(event) {
         }
       }
       if (puedeFabricar) {
-        await event.send(`!forja ${item.nombre}`);
-        // Eliminar el item forjado de la lista de forja
-        const index = global.kingsbane.forja.indexOf(item);
-        if (index > -1) {
-          global.kingsbane.forja.splice(index, 1);
+        // Calcular cantidad máxima posible según recursos
+        let maxPosible = Infinity;
+        for (const [material, cantidad] of Object.entries(item.materiales)) {
+          const materialLower = material.toLowerCase();
+          const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
+          const disponibles = stock[stockKey] || 0;
+          const posible = Math.floor(disponibles / cantidad);
+          maxPosible = Math.min(maxPosible, posible);
+        }
+
+        // Determinar cantidad a fabricar
+        let cantidadFabricar = 1;
+        if (item.cantidad) {
+          if (item.cantidad.toLowerCase() === 'todo') {
+            // Fabricar el máximo posible
+            cantidadFabricar = maxPosible;
+          } else {
+            // Usar la cantidad especificada, sin superar el máximo posible
+            cantidadFabricar = Math.min(item.cantidad, maxPosible);
+          }
+        }
+
+        await event.send(`!forja ${item.nombre} ${cantidadFabricar}`);
+
+        // Eliminar el item forjado de la lista de forja solo si se fabricó todo lo posible o cantidad especificada
+        if (cantidadFabricar === maxPosible || (item.cantidad && item.cantidad.toLowerCase() !== 'todo' && cantidadFabricar >= item.cantidad)) {
+          const index = global.kingsbane.forja.indexOf(item);
+          if (index > -1) {
+            global.kingsbane.forja.splice(index, 1);
+          }
         }
         itemForjado = true;
         break;
