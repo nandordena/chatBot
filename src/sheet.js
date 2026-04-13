@@ -157,11 +157,11 @@ export async function read(event) {
     return;
   }
 
-  //calc !calc <numero1> <operador> <numero2>
-  if (event.command.name === 'calc' && checkCooldown('calc') && checkCooldown('calc')) {
+  //calc !calc <numero1><operador><numero2>
+  if (event.command.name === 'calc' && checkCooldown('calc')) {
     const items = event.command.args.join(' ').split(',');
     if (items.length < 2) {
-      await event.send('Uso: !calc <numero1><operador> <numero2>');
+      await event.send('Uso: !calc <numero1><operador><numero2>');
       return;
     }
     const item = items[Math.floor(Math.random() * items.length)];
