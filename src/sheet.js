@@ -99,10 +99,10 @@ export async function read(event) {
   // Soporta dados d3, d4, ..., d10, ..., d20
   // d10 es el único que va de 0-9, los demás de 1-n
   var diceMatch = false;
-  if(event?.command?.name){
+  if (event?.command?.name) {
     diceMatch = event.command.name.match(/^d(3|4|6|8|10|12|20)$/);
   }
-  
+
   if (diceMatch) {
     const type = parseInt(diceMatch[1], 10);
 
@@ -306,7 +306,7 @@ export async function read(event) {
 
   // Comandos: !nandocomandos (lista de comandos disponibles)
   if (event.command.name === 'comandos') {
-    await event.send('📋 Comandos disponibles: !ping, !hola, !d[3-20], !coin, !countdown, !intervalo, !stop, !ia, !gpt, !elping, !donde');
+    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !kingsbane');
     return;
   }
 
@@ -381,17 +381,29 @@ export async function read(event) {
     return;
   }
 
-  // !leave - Hacer que el bot abandone el canal actual (solo admin)
+  // !leave [canal] - Hacer que el bot abandone el canal actual o uno específico (solo admin)
   if (event.command.name === 'leave') {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
       return;
     }
+    const targetChannel = event.command.args[0];
+    let channelToLeave;
+
+    if (!targetChannel) {
+      // Si no se especifica canal, usar el actual
+      channelToLeave = event.channel;
+    } else {
+      // Añadir # si no lo tiene
+      channelToLeave = targetChannel.startsWith('#') ? targetChannel : `#${targetChannel}`;
+    }
+
     try {
-      await event.client.part(event.channel);
-      await event.send(`nandobot ha salido de ${event.channel}...`);
+      await event.client.part(channelToLeave);
+      await event.send(`nandobot ha salido de ${channelToLeave}...`);
     } catch (err) {
       console.info(`No pude salir del canal: ${err.message}`);
+      await event.send(`No pude salir de ${channelToLeave}: ${err.message}`);
     }
     return;
   }
@@ -400,6 +412,7 @@ export async function read(event) {
   //autocomander
 
   //////// kingsbane ///////////
+
   global.kingsbane = {};
   global.kingsbane.votar = false;
   if (event.command.name === 'kingsbane') {
@@ -446,34 +459,110 @@ export async function read(event) {
     // Regla de decisión
     if (global._inventory.used / global._inventory.capacity >= 0.8) {
       // Prioridad: Vaciar mochila para evitar la Ira de G.E.N.I.O. [4]
-      if(global._site != "Ciudadela" & global.kingsbane.votar) await event.send('!votar ciudadela');
+      if (global._site != "Ciudadela" & global.kingsbane.votar) await event.send('!votar ciudadela');
     } else {
       // Selecciona la zona con el valor numérico más bajo en el objeto 'materiales'
       const zonaDestino = Object.keys(materiales).reduce((a, b) => materiales[a] < materiales[b] ? a : b);
 
-      if(global._site.toLowerCase != zonaDestino 
-      & global.kingsbane.votar) await event.send(`!votar ${zonaDestino}`);
+      if (global._site.toLowerCase != zonaDestino
+        & global.kingsbane.votar) await event.send(`!votar ${zonaDestino}`);
+    }
+
+  }
+
+  global.kingsbane.forja = [
+    {
+      "nombre": "Mochipocha",
+      "materiales": { "piel": 20, "enredadera": 10 },
+      "oro": 100
+    },
+    {
+      "nombre": "Fardo",
+      "materiales": { "cuero": 25, "enredadera": 20, "mochipocha": 1 },
+      "oro": 250
+    },
+    {
+      "nombre": "Hacha de Piedra",
+      "materiales": { "madera": 20, "piedra": 20, "enredadera": 5 },
+      "oro": 100
+    },
+    {
+      "nombre": "Hacha de Hueso",
+      "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "hacha_piedra": 1 },
+      "oro": 250
+    },
+    {
+      "nombre": "Lanza de Hueso",
+      "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "lanza_piedra": 1 },
+      "oro": 250
+    },
+  ];
+  if (event.text.includes("La colmena se mueve a: 🏰 La Ciudadela")) {
+    // decisiones en la ciudadela
+    // Revisar forja y fabricar primer item posible
+    const stock = global._inventory?.items || {};
+    let itemForjado = false;
+
+    // FORJA
+    for (const item of global.kingsbane.forja) {
+      let puedeFabricar = true;
+      for (const [material, cantidad] of Object.entries(item.materiales)) {
+        const materialLower = material.toLowerCase();
+        const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
+        if (!stockKey || (stock[stockKey] || 0) < cantidad) {
+          puedeFabricar = false;
+          break;
+        }
+      }
+      if (puedeFabricar) {
+        await event.send(`!forja ${item.nombre}`);
+        // Eliminar el item forjado de la lista de forja
+        const index = global.kingsbane.forja.indexOf(item);
+        if (index > -1) {
+          global.kingsbane.forja.splice(index, 1);
+        }
+        itemForjado = true;
+        break;
+      }
+    }
+
+    if (!itemForjado) {
+      await event.send(`Ahora mismo no puedo forjar nada, toy pobre`);
+      // Si no puede forjar, pedir un chiste de pobres a la IA
+      const chiste = await pront("Dime un chiste corto y gracioso sobre ser pobre, en español, estilo informal de chat de Twitch");
+      await event.send(chiste);
+    }
+
+    // VENTA: vender todo lo que supere 50 unidades
+    const LIMITE_ALMACEN = 50;
+
+    for (const [item, cantidad] of Object.entries(stock)) {
+      if (cantidad > LIMITE_ALMACEN) {
+        const cantidadVender = cantidad - LIMITE_ALMACEN;
+        await event.send(`!vender ${item} ${cantidadVender}`);
+      }
     }
   }
   if (event.text.includes("¡Votación ABIERTA! ")) {
     global._site = event.text.match(/(\w+).\s¿Cambio/g);
-    if(global._site == "Ciudadela") await event.send('!almacen');
+    if (global._site == "Ciudadela") await event.send('!almacen');
     else await event.send('!mochila');
   }
   var kingsbaneMatch = false;
-  if(event?.command?.name){
+  if (event?.command?.name) {
     kingsbaneMatch = event.command.name.match(/^kingsbane\.(\w+)$/);
   }
-  
+
   if (kingsbaneMatch) {
-      attrMatch = event.command.name.match(/^kingsbane\.\w+\s(\w+)$/);
-      if (attrMatch) {
-          if(attrMatch=="false") attrMatch = false;
-          if(attrMatch=="true") attrMatch = true;
-          global.kingsbane[kingsbaneMatch]=attrMatch;
-      }
-      
+    attrMatch = event.command.name.match(/^kingsbane\.\w+\s(\w+)$/);
+    if (attrMatch) {
+      if (attrMatch == "false") attrMatch = false;
+      if (attrMatch == "true") attrMatch = true;
+      global.kingsbane[kingsbaneMatch] = attrMatch;
+    }
+
   }
+
   ///////////////////////////////
 }
 
