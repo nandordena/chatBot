@@ -65,12 +65,18 @@ const isAdmin = (event) => {
 
 // Variable y función de cooldown solicitada
 global.couldown = global.couldown || {};
-global.couldown['!patata'] = 1000 * 60 * 15;
+global.setCouldown = global.setCouldown || {};
+// Configuramos el cooldown (usamos el nombre del comando sin "!", igual que al llamarlo)
+global.setCouldown['patata'] = 1000 * 60 * 15;
 
 const checkCooldown = (command, ms = 5000) => {
+  // Si hay un cooldown configurado, lo usamos; si no, usamos el ms por defecto
+  const cooldownTime = global.setCouldown[command] !== undefined ? global.setCouldown[command] : ms;
+
   const now = Date.now();
   const lastTime = global.couldown[command] || 0;
-  if (now - lastTime >= ms) {
+
+  if (now - lastTime >= cooldownTime) {
     global.couldown[command] = now;
     return true;
   }
@@ -146,7 +152,7 @@ export async function read(event) {
   }
 
   //ruleta !ruleta <item1>,<item2>,...
-  if (event.command.name === 'ruleta' && checkCooldown('ruleta') && checkCooldown('ruleta')) {
+  if (event.command.name === 'ruleta' && checkCooldown('ruleta')) {
     const items = event.command.args.join(' ').split(',');
     if (items.length < 2) {
       await event.send('Uso: !ruleta <item1>,<item2>,(...)');
@@ -157,15 +163,36 @@ export async function read(event) {
     return;
   }
 
-  //calc !calc <numero1><operador><numero2>
+  //calc !calc <operacion>
   if (event.command.name === 'calc' && checkCooldown('calc')) {
-    const items = event.command.args.join(' ').split(',');
-    if (items.length < 2) {
-      await event.send('Uso: !calc <numero1><operador><numero2>');
+    // Unimos los argumentos para soportar cálculos con o sin espacios
+    const expression = event.command.args.join('');
+
+    if (!expression) {
+      await event.send('Uso: !calc <operacion> (Ej: 2+3*20+(10*3))');
       return;
     }
-    const item = items[Math.floor(Math.random() * items.length)];
-    await event.send(item);
+
+    // Validamos que solo contenga números y operadores matemáticos por seguridad
+    if (!/^[\d+\-*/().%\s]+$/.test(expression)) {
+      await event.send('Operación inválida. Solo números y operadores + - * / % ( )');
+      return;
+    }
+
+    try {
+      // Usamos Function para evaluar la expresión de forma más segura tras pasar el regex
+      // eslint-disable-next-line no-new-func
+      const result = new Function(`return ${expression}`)();
+
+      // Asegurarse de no mandar mensajes vacíos si result es undefined
+      if (result === undefined || Number.isNaN(result)) {
+        await event.send('Operación no válida.');
+      } else {
+        await event.send(`Resultado: ${result}`);
+      }
+    } catch (e) {
+      await event.send('Error en la operación. Revisa que esté bien escrita.');
+    }
     return;
   }
 
