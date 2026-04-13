@@ -371,7 +371,7 @@ export async function read(event) {
   }
 
   // Comandos: !nandocomandos (lista de comandos disponibles)
-  if (event.command.name === 'comandos' && checkCooldown('comandos')) {
+  if (event.command.name === 'comandosnando' && checkCooldown('comandosnando')) {
     await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !kingsbane');
     return;
   }
