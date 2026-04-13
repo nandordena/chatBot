@@ -63,6 +63,20 @@ const isAdmin = (event) => {
   return username === process.env.ADMIN_USERNAME?.toLowerCase() || username === channelName;
 };
 
+// Variable y función de cooldown solicitada
+global.couldown = global.couldown || {};
+global.couldown['!patata'] = 1000 * 60 * 15;
+
+const checkCooldown = (command, ms = 5000) => {
+  const now = Date.now();
+  const lastTime = global.couldown[command] || 0;
+  if (now - lastTime >= ms) {
+    global.couldown[command] = now;
+    return true;
+  }
+  return false;
+};
+
 export async function read(event) {
 
   // IA (Hypereal): ejemplo de uso
@@ -70,10 +84,11 @@ export async function read(event) {
   // Nota: la función se llama "pront" porque así la pediste.
   // eslint-disable-next-line no-use-before-define
   if (
-    event.command?.name === 'ia'
-    || event.command?.name === 'ia,'
-    || event.command?.name === 'gpt'
-    || event.command?.name === 'gpt,'
+    (event.command?.name === 'ia'
+      || event.command?.name === 'ia,'
+      || event.command?.name === 'gpt'
+      || event.command?.name === 'gpt,')
+    && checkCooldown('ia')
   ) {
     const question = event.command.args.join(' ').trim();
     if (!question) {
@@ -85,12 +100,12 @@ export async function read(event) {
     return;
   }
 
-  if (event.command.name === 'ping') {
+  if (event.command.name === 'ping' && checkCooldown('ping')) {
     await event.send('pong');
     return;
   }
 
-  if (event.command.name === 'hola') {
+  if (event.command.name === 'hola' && checkCooldown('hola')) {
     const name = event.user.displayName ?? event.user.username ?? 'chat';
     await event.send(`Hola, @${name}`);
     return;
@@ -103,7 +118,7 @@ export async function read(event) {
     diceMatch = event.command.name.match(/^d(3|4|6|8|10|12|20)$/);
   }
 
-  if (diceMatch) {
+  if (diceMatch && checkCooldown('dice')) {
     const type = parseInt(diceMatch[1], 10);
 
     // Determinar número de dados (1 a 5)
@@ -130,7 +145,7 @@ export async function read(event) {
     return;
   }
 
-  if (event.command.name === 'coin') {
+  if (event.command.name === 'coin' && checkCooldown('coin')) {
     const result = Math.random() < 0.5 ? 'cara' : 'cruz';
     const face = result === 'cara' ? '((ツ))' : '((✗))';
     //await event.send(`${face} ${result}`);
@@ -139,7 +154,7 @@ export async function read(event) {
   }
 
   // Countdown: !countdown [numero] o !countdown [numero]m (minutos)
-  if (event.command.name === 'countdown') {
+  if (event.command.name === 'countdown' && checkCooldown('countdown')) {
     const numStr = event.command.args[0];
     if (!numStr) {
       await event.send('Uso: !countdown <segundos> o !countdown <minutos>m');
@@ -207,7 +222,7 @@ export async function read(event) {
   }
 
   // Interval: !interval [segundos] o [minutos]m [texto] - envía texto cada X tiempo
-  if (event.command.name === 'interval') {
+  if (event.command.name === 'interval' && checkCooldown('interval')) {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
       return;
@@ -255,7 +270,7 @@ export async function read(event) {
   }
 
   // Stop: !stop (para la cuenta regresiva y el intervalo)
-  if (event.command.name === 'stop') {
+  if (event.command.name === 'stop' && checkCooldown('stop')) {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
       return;
@@ -282,30 +297,30 @@ export async function read(event) {
     return;
   }
 
-  if (event.command.name === 'cartas') {
+  if (event.command.name === 'cartas' && checkCooldown('cartas')) {
     await event.send('No es verdad , las cartas no existen... o sí? (¬ - ¬)');
     return;
   }
 
-  if (event.command.name === 'patata') {
+  if (event.command.name === 'patata' && checkCooldown('patata')) {
     await event.send('!patata dorada');
     await event.send('🥔  ');
     return;
   }
 
   //PREESCRITO
-  if (event.command.name === 'elping') {
+  if (event.command.name === 'elping' && checkCooldown('elping')) {
     await event.send('El ping es comando basico que me mandan para saber si respondo, y yo respondo "pong" cuando me etero o cuando me mandan el comando bien escrito \\(¬ - ¬)/');
     return;
   }
 
-  if (event.command.name === 'dedondeesnando') {
+  if (event.command.name === 'dedondeesnando' && checkCooldown('dedondeesnando')) {
     await event.send('Nando nació en Argentina, pero estudio y vive en españa hace años');
     return;
   }
 
   // Comandos: !nandocomandos (lista de comandos disponibles)
-  if (event.command.name === 'comandos') {
+  if (event.command.name === 'comandos' && checkCooldown('comandos')) {
     await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !kingsbane');
     return;
   }
@@ -317,7 +332,7 @@ export async function read(event) {
     return;
   }
 
-  if (event.command.name === 'haz') {
+  if (event.command.name === 'haz' && checkCooldown('haz')) {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
       return;
@@ -362,7 +377,7 @@ export async function read(event) {
   }
 
   // !jointo <nombrecanal> - Hacer que el bot cambie a otro canal (solo admin)
-  if (event.command.name === 'jointo') {
+  if (event.command.name === 'jointo' && checkCooldown('jointo')) {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
       return;
@@ -382,7 +397,7 @@ export async function read(event) {
   }
 
   // !leave [canal] - Hacer que el bot abandone el canal actual o uno específico (solo admin)
-  if (event.command.name === 'leave') {
+  if (event.command.name === 'leave' && checkCooldown('leave')) {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
       return;
@@ -411,174 +426,172 @@ export async function read(event) {
 
   //autocomander
 
-  //////// kingsbane ///////////
-
-  global.kingsbane = {};
-  global.kingsbane.votar = false;
-  if (event.command.name === 'kingsbane') {
-    if (!isAdmin(event)) {
-      await event.send('No eres nando.');
-      return;
-    }
-    await event.send('!interval 5m !anclar');
-  }
-  if (event.text.includes('@nandordena →')) {
-    // Parsear inventario del mensaje de mochila
-    const inventoryMatch = event.text.match(/.*@\w+ → \[(.*?)\] \| 📦 (\d+)\/(\d+)/);
-    if (inventoryMatch) {
-      const itemsStr = inventoryMatch[1];
-      const used = parseInt(inventoryMatch[2], 10);
-      const capacity = parseInt(inventoryMatch[3], 10);
-
-      // Parsear items (formato: "Enredadera x2 · Madera x5")
-      const items = {};
-      const itemMatches = itemsStr.matchAll(/(\w+)\s+x(\d+)/g);
-      for (const match of itemMatches) {
-        items[match[1]] = parseInt(match[2], 10);
+  //////// kingsbane@buildingloud ///////////
+  if (event.channelName == "buildingloud") {
+    if (event.command.name === 'kingsbane' && checkCooldown('kingsbane')) {
+      if (!isAdmin(event)) {
+        await event.send('No eres nando.');
+        return;
       }
+      await event.send('!interval 5m !anclar');
+    }
+    if (event.text.includes('@nandordena →') && checkCooldown('@nandordena →')) {
+      // Parsear inventario del mensaje de mochila
+      const inventoryMatch = event.text.match(/.*@\w+ → \[(.*?)\] \| 📦 (\d+)\/(\d+)/);
+      if (inventoryMatch) {
+        const itemsStr = inventoryMatch[1];
+        const used = parseInt(inventoryMatch[2], 10);
+        const capacity = parseInt(inventoryMatch[3], 10);
 
-      // Guardar en variable global
-      global._inventory = {
-        items,
-        used,
-        capacity
+        // Parsear items (formato: "Enredadera x2 · Madera x5")
+        const items = {};
+        const itemMatches = itemsStr.matchAll(/(\w+)\s+x(\d+)/g);
+        for (const match of itemMatches) {
+          items[match[1]] = parseInt(match[2], 10);
+        }
+
+        // Guardar en variable global
+        global._inventory = {
+          items,
+          used,
+          capacity
+        };
+
+        console.log('Inventario actualizado:', global._inventory);
+      }
+      // Definimos grupos de materiales por bioma según las fuentes
+      const stock = global._inventory.items;
+
+      const materiales = {
+        bosque: (stock["Madera"] || 0) + (stock["Madera roble"] || 0) + (stock["Enredadera"] || 0) + (stock["Resina"] || 0),
+        mina: (stock["Piedra"] || 0) + (stock["Cobre"] || 0) + (stock["Hierro"] || 0) + (stock["Carbon"] || 0) + (stock["Plata"] || 0),
+        caza: (stock["Hueso"] || 0) + (stock["Cuero"] || 0) + (stock["Grasa"] || 0) + (stock["Colmillo"] || 0),
+        pesca: (stock["Pescado"] || 0) + (stock["Chatarra"] || 0) + (stock["Perla"] || 0) + (stock["Escama sirena"] || 0) + (stock["Marisco"] || 0)
       };
 
-      console.log('Inventario actualizado:', global._inventory);
-    }
-    // Definimos grupos de materiales por bioma según las fuentes
-    const stock = global._inventory.items;
+      // Regla de decisión
+      if (global._inventory.used / global._inventory.capacity >= 0.8) {
+        // Prioridad: Vaciar mochila para evitar la Ira de G.E.N.I.O. [4]
+        if (global._site != "Ciudadela" & global.kingsbane.votar) await event.send('!votar ciudadela');
+      } else {
+        // Selecciona la zona con el valor numérico más bajo en el objeto 'materiales'
+        const zonaDestino = Object.keys(materiales).reduce((a, b) => materiales[a] < materiales[b] ? a : b);
 
-    const materiales = {
-      bosque: (stock["Madera"] || 0) + (stock["Madera roble"] || 0) + (stock["Enredadera"] || 0) + (stock["Resina"] || 0),
-      mina: (stock["Piedra"] || 0) + (stock["Cobre"] || 0) + (stock["Hierro"] || 0) + (stock["Carbon"] || 0) + (stock["Plata"] || 0),
-      caza: (stock["Hueso"] || 0) + (stock["Cuero"] || 0) + (stock["Grasa"] || 0) + (stock["Colmillo"] || 0),
-      pesca: (stock["Pescado"] || 0) + (stock["Chatarra"] || 0) + (stock["Perla"] || 0) + (stock["Escama sirena"] || 0) + (stock["Marisco"] || 0)
-    };
-
-    // Regla de decisión
-    if (global._inventory.used / global._inventory.capacity >= 0.8) {
-      // Prioridad: Vaciar mochila para evitar la Ira de G.E.N.I.O. [4]
-      if (global._site != "Ciudadela" & global.kingsbane.votar) await event.send('!votar ciudadela');
-    } else {
-      // Selecciona la zona con el valor numérico más bajo en el objeto 'materiales'
-      const zonaDestino = Object.keys(materiales).reduce((a, b) => materiales[a] < materiales[b] ? a : b);
-
-      if (global._site.toLowerCase != zonaDestino
-        & global.kingsbane.votar) await event.send(`!votar ${zonaDestino}`);
-    }
-
-  }
-
-  global.kingsbane.forja = [
-    {
-      "nombre": "Fardo",
-      "materiales": { "cuero": 25, "enredadera": 20, "mochipocha": 1 },
-      "oro": 250
-    },
-    {
-      "nombre": "lanza_hueso",
-      "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "lanza_piedra": 1 },
-      "oro": 250
-    },
-    {
-      "nombre": "Cuero",
-      "cantidad": "todo",
-      "materiales": { "piel": 5, },
-      "oro": 0
-    },
-  ];
-  if (event.text.includes("La colmena se mueve a: 🏰 La Ciudadela")) {
-    // decisiones en la ciudadela
-    // Revisar forja y fabricar primer item posible
-    const stock = global._inventory?.items || {};
-    let itemForjado = false;
-
-    // FORJA
-    for (const item of global.kingsbane.forja) {
-      let puedeFabricar = true;
-      for (const [material, cantidad] of Object.entries(item.materiales)) {
-        const materialLower = material.toLowerCase();
-        const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
-        if (!stockKey || (stock[stockKey] || 0) < cantidad) {
-          puedeFabricar = false;
-          break;
-        }
+        if (global._site.toLowerCase != zonaDestino
+          & global.kingsbane.votar) await event.send(`!votar ${zonaDestino}`);
       }
-      if (puedeFabricar) {
-        // Calcular cantidad máxima posible según recursos
-        let maxPosible = Infinity;
+
+    }
+
+    global.kingsbane.forja = [
+      {
+        "nombre": "Fardo",
+        "materiales": { "cuero": 25, "enredadera": 20, "mochipocha": 1 },
+        "oro": 250
+      },
+      {
+        "nombre": "lanza_hueso",
+        "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "lanza_piedra": 1 },
+        "oro": 250
+      },
+      {
+        "nombre": "Cuero",
+        "cantidad": "todo",
+        "materiales": { "piel": 5, },
+        "oro": 0
+      },
+    ];
+    if (event.text.includes("La colmena se mueve a: 🏰 La Ciudadela") && checkCooldown('La colmena se mueve a: 🏰 La Ciudadela')) {
+      // decisiones en la ciudadela
+      // Revisar forja y fabricar primer item posible
+      const stock = global._inventory?.items || {};
+      let itemForjado = false;
+
+      // FORJA
+      for (const item of global.kingsbane.forja) {
+        let puedeFabricar = true;
         for (const [material, cantidad] of Object.entries(item.materiales)) {
           const materialLower = material.toLowerCase();
           const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
-          const disponibles = stock[stockKey] || 0;
-          const posible = Math.floor(disponibles / cantidad);
-          maxPosible = Math.min(maxPosible, posible);
-        }
-
-        // Determinar cantidad a fabricar
-        let cantidadFabricar = 1;
-        if (item.cantidad) {
-          if (item.cantidad.toLowerCase() === 'todo') {
-            // Fabricar el máximo posible
-            cantidadFabricar = maxPosible;
-          } else {
-            // Usar la cantidad especificada, sin superar el máximo posible
-            cantidadFabricar = Math.min(item.cantidad, maxPosible);
+          if (!stockKey || (stock[stockKey] || 0) < cantidad) {
+            puedeFabricar = false;
+            break;
           }
         }
-
-        await event.send(`!forja ${item.nombre} ${cantidadFabricar}`);
-
-        // Eliminar el item forjado de la lista de forja solo si se fabricó todo lo posible o cantidad especificada
-        if (cantidadFabricar === maxPosible || (item.cantidad && item.cantidad.toLowerCase() !== 'todo' && cantidadFabricar >= item.cantidad)) {
-          const index = global.kingsbane.forja.indexOf(item);
-          if (index > -1) {
-            global.kingsbane.forja.splice(index, 1);
+        if (puedeFabricar) {
+          // Calcular cantidad máxima posible según recursos
+          let maxPosible = Infinity;
+          for (const [material, cantidad] of Object.entries(item.materiales)) {
+            const materialLower = material.toLowerCase();
+            const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
+            const disponibles = stock[stockKey] || 0;
+            const posible = Math.floor(disponibles / cantidad);
+            maxPosible = Math.min(maxPosible, posible);
           }
+
+          // Determinar cantidad a fabricar
+          let cantidadFabricar = 1;
+          if (item.cantidad) {
+            if (item.cantidad.toLowerCase() === 'todo') {
+              // Fabricar el máximo posible
+              cantidadFabricar = maxPosible;
+            } else {
+              // Usar la cantidad especificada, sin superar el máximo posible
+              cantidadFabricar = Math.min(item.cantidad, maxPosible);
+            }
+          }
+
+          await event.send(`!forja ${item.nombre} ${cantidadFabricar}`);
+
+          // Eliminar el item forjado de la lista de forja solo si se fabricó todo lo posible o cantidad especificada
+          if (cantidadFabricar === maxPosible || (item.cantidad && item.cantidad.toLowerCase() !== 'todo' && cantidadFabricar >= item.cantidad)) {
+            const index = global.kingsbane.forja.indexOf(item);
+            if (index > -1) {
+              global.kingsbane.forja.splice(index, 1);
+            }
+          }
+          itemForjado = true;
+          break;
         }
-        itemForjado = true;
-        break;
+      }
+
+      if (!itemForjado) {
+        await event.send(`Ahora mismo no puedo forjar nada, toy pobre`);
+        // Si no puede forjar, pedir un chiste de pobres a la IA
+        const chiste = await pront("Dime un chiste corto y gracioso sobre ser pobre, en español, estilo informal de chat de Twitch");
+        await event.send(chiste);
+      }
+
+      // VENTA: vender todo lo que supere 50 unidades
+      const LIMITE_ALMACEN = 50;
+
+      for (const [item, cantidad] of Object.entries(stock)) {
+        if (cantidad > LIMITE_ALMACEN) {
+          const cantidadVender = cantidad - LIMITE_ALMACEN;
+          await event.send(`!vender ${item} ${cantidadVender}`);
+        }
       }
     }
-
-    if (!itemForjado) {
-      await event.send(`Ahora mismo no puedo forjar nada, toy pobre`);
-      // Si no puede forjar, pedir un chiste de pobres a la IA
-      const chiste = await pront("Dime un chiste corto y gracioso sobre ser pobre, en español, estilo informal de chat de Twitch");
-      await event.send(chiste);
+    if (event.text.includes("¡Votación ABIERTA!") && checkCooldown('¡Votación ABIERTA!')) {
+      global._site = event.text.match(/(\w+).\s¿Cambio/g);
+      if (global._site == "Ciudadela") await event.send('!almacen');
+      else await event.send('!mochila');
+    }
+    var kingsbaneMatch = false;
+    if (event?.command?.name) {
+      kingsbaneMatch = event.command.name.match(/^kingsbane\.(\w+)$/);
     }
 
-    // VENTA: vender todo lo que supere 50 unidades
-    const LIMITE_ALMACEN = 50;
-
-    for (const [item, cantidad] of Object.entries(stock)) {
-      if (cantidad > LIMITE_ALMACEN) {
-        const cantidadVender = cantidad - LIMITE_ALMACEN;
-        await event.send(`!vender ${item} ${cantidadVender}`);
+    if (kingsbaneMatch && checkCooldown('kingsbaneMatch')) {
+      attrMatch = event.command.name.match(/^kingsbane\.\w+\s(\w+)$/);
+      if (attrMatch) {
+        if (attrMatch == "false") attrMatch = false;
+        if (attrMatch == "true") attrMatch = true;
+        global.kingsbane[kingsbaneMatch] = attrMatch;
       }
+
     }
   }
-  if (event.text.includes("¡Votación ABIERTA! ")) {
-    global._site = event.text.match(/(\w+).\s¿Cambio/g);
-    if (global._site == "Ciudadela") await event.send('!almacen');
-    else await event.send('!mochila');
-  }
-  var kingsbaneMatch = false;
-  if (event?.command?.name) {
-    kingsbaneMatch = event.command.name.match(/^kingsbane\.(\w+)$/);
-  }
-
-  if (kingsbaneMatch) {
-    attrMatch = event.command.name.match(/^kingsbane\.\w+\s(\w+)$/);
-    if (attrMatch) {
-      if (attrMatch == "false") attrMatch = false;
-      if (attrMatch == "true") attrMatch = true;
-      global.kingsbane[kingsbaneMatch] = attrMatch;
-    }
-
-  }
-
   ///////////////////////////////
 }
 
