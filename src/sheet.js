@@ -332,7 +332,9 @@ export async function read(event) {
     return;
   }
 
-  // Stop: !stop (para la cuenta regresiva y el intervalo)
+
+
+  // Stop: !stop (para la cuenta regresiva, intervalo y timeout)
   if (event.command.name === 'stop' && checkCooldown('stop')) {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
@@ -352,6 +354,12 @@ export async function read(event) {
       stopped = true;
     }
 
+    if (global._timeoutId) {
+      clearTimeout(global._timeoutId);
+      global._timeoutId = null;
+      stopped = true;
+    }
+
     if (global._ytLiveChat) {
       global._ytLiveChat.stop();
       global._ytLiveChat = null;
@@ -368,6 +376,50 @@ export async function read(event) {
     } else {
       await event.send('No hay proceso activo');
     }
+    return;
+  }
+
+  // Timeout: !timeout <segundos> <mensaje> o !timeout <minutos>m <mensaje>
+  if (event.command.name === 'timeout' && checkCooldown('timeout')) {
+    const firstArg = event.command.args[0];
+    const restArgs = event.command.args.slice(1);
+
+    if (!firstArg || restArgs.length === 0) {
+      await event.send('Uso: !timeout <segundos> <mensaje> o !timeout <minutos>m <mensaje>');
+      return;
+    }
+
+    let timeoutMs;
+    if (firstArg.toLowerCase().endsWith('m')) {
+      // Formato minutos: !timeout 5m mensaje
+      const minStr = firstArg.slice(0, -1);
+      if (!/^\d+$/.test(minStr)) {
+        await event.send('Uso: !timeout <segundos> <mensaje> o !timeout <minutos>m <mensaje>');
+        return;
+      }
+      const minutes = Math.min(Math.max(parseInt(minStr, 10), 1), 60); // max 60 minutos
+      timeoutMs = minutes * 60 * 1000;
+    } else {
+      // Formato segundos: !timeout 30 mensaje
+      if (!/^\d+$/.test(firstArg)) {
+        await event.send('Uso: !timeout <segundos> <mensaje> o !timeout <minutos>m <mensaje>');
+        return;
+      }
+      const seconds = Math.min(Math.max(parseInt(firstArg, 10), 1), 3600); // max 1 hora
+      timeoutMs = seconds * 1000;
+    }
+
+    const message = restArgs.join(' ');
+
+    // Confirmar que se programó el timeout
+    await event.send(`⏰ Mensaje programado para dentro de ${firstArg}`);
+
+    // Programar el envío del mensaje después del tiempo especificado
+    global._timeoutId = setTimeout(async () => {
+      await event.send(message);
+      global._timeoutId = null; // Limpiar cuando se ejecute
+    }, timeoutMs);
+
     return;
   }
 
@@ -395,7 +447,7 @@ export async function read(event) {
 
   // Comandos: !nandocomandos (lista de comandos disponibles)
   if (event.command.name === 'comandosnando' && checkCooldown('comandosnando')) {
-    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !to, !kingsbane, !ytprint');
+    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !timeout, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !to, !kingsbane, !ytprint');
     return;
   }
 
