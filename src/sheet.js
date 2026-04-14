@@ -340,6 +340,17 @@ export async function read(event) {
       stopped = true;
     }
 
+    if (global._ytLiveChat) {
+      global._ytLiveChat.stop();
+      global._ytLiveChat = null;
+      stopped = true;
+    }
+
+    if (typeof global.clearSendQueue === 'function') {
+      global.clearSendQueue();
+      stopped = true;
+    }
+
     if (stopped) {
       await event.send('⏹️ Proceso(s) detenido(s)');
     } else {
@@ -372,7 +383,7 @@ export async function read(event) {
 
   // Comandos: !nandocomandos (lista de comandos disponibles)
   if (event.command.name === 'comandosnando' && checkCooldown('comandosnando')) {
-    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !kingsbane');
+    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !kingsbane, !ytprint');
     return;
   }
 
@@ -419,10 +430,80 @@ export async function read(event) {
 
     if (Array.isArray(responses)) {
       for (const msg of responses) {
-        await event.send(msg);
+        // Enviar sin await para que se agreguen de golpe a la cola (y !stop pueda descartarlas luego)
+        event.send(msg).catch(e => console.error(e));
       }
     } else {
       await event.send(out);
+    }
+    return;
+  }
+
+  // !ytprint <liveid> - Conectarse a chat de youtube
+  if (event.command.name === 'ytprint' && checkCooldown('ytprint')) {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
+
+    const arg = event.command.args[0];
+    if (!arg) {
+      await event.send('Uso: !ytprint <liveid> para conectar, o !ytprint stop para desconectar.');
+      return;
+    }
+
+    if (arg === 'stop') {
+      if (global._ytLiveChat) {
+        global._ytLiveChat.stop();
+        global._ytLiveChat = null;
+        await event.send('Desconectado del chat de Youtube.');
+      } else {
+        await event.send('No hay chat de Youtube conectado actualmente.');
+      }
+      return;
+    }
+
+    // Desconectar el anterior si existe
+    if (global._ytLiveChat) {
+      global._ytLiveChat.stop();
+      global._ytLiveChat = null;
+    }
+
+    try {
+      // Import dinámico para que no bloquee arriba y se cargue solo si hace falta
+      const { LiveChat } = await import('youtube-chat');
+      const liveChat = new LiveChat({ liveId: arg });
+      global._ytLiveChat = liveChat;
+      const startTime = new Date(); // Guardar hora exacta para ignorar chats antiguos
+
+      liveChat.on('start', (liveId) => {
+        event.send(`[YT] Conectado al live: ${liveId}`);
+      });
+
+      liveChat.on('chat', (chatItem) => {
+        // Ignorar mensajes enviados antes de la hora actual
+        if (chatItem.timestamp && chatItem.timestamp < startTime) {
+          return;
+        }
+        
+        // chatItem.message es un array que puede tener string (text) o emojis.
+        const text = chatItem.message.map(p => p.text || '').join('');
+        const author = chatItem.author.name;
+        event.send(`[YT] ${author}: ${text}`);
+      });
+
+      liveChat.on('error', (err) => {
+        console.error('[YT Chat Error]', err);
+      });
+
+      const ok = await liveChat.start();
+      if (!ok) {
+        await event.send('[YT] Fallo al iniciar la conexión (¿liveId incorrecto?).');
+        global._ytLiveChat = null;
+      }
+    } catch (e) {
+      console.error(e);
+      await event.send(`[YT] Error: ${e.message}`);
     }
     return;
   }
