@@ -47,13 +47,26 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let sendQueue = Promise.resolve();
 const MIN_SEND_INTERVAL_MS = Number(process.env.TWITCH_MIN_SEND_INTERVAL_MS ?? 2000);
 let nextAllowedAt = 0; // timestamp ms: no enviar antes de esto
+let currentQueueToken = 0; // token para permitir vaciar la cola
+
+global.clearSendQueue = () => {
+  currentQueueToken++;
+  sendQueue = Promise.resolve();
+  nextAllowedAt = 0;
+};
 
 function enqueueSay(fn) {
+  const myToken = currentQueueToken;
   sendQueue = sendQueue
     .then(async () => {
+      if (myToken !== currentQueueToken) return; // La cola fue limpiada
+      
       const now = Date.now();
       const waitMs = Math.max(0, nextAllowedAt - now);
       if (waitMs) await sleep(waitMs);
+      
+      if (myToken !== currentQueueToken) return; // La cola fue limpiada mientras esperaba
+      
       await fn();
       nextAllowedAt = Date.now() + MIN_SEND_INTERVAL_MS;
     })
