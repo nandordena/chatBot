@@ -95,6 +95,31 @@ const checkCooldown = (command, ms = 5000) => {
   return false;
 };
 
+const commandHelp = {
+  ping: 'Responde pong.',
+  hola: 'Saluda al autor del mensaje.',
+  d: 'Tira un dado. Ej: !d20 o !d6 3.',
+  coin: 'Lanza una moneda: cara o cruz.',
+  countdown: 'Inicia una cuenta regresiva y muestra tiempos mientras avanza.',
+  timeout: 'Escribe un mensaje después de un tiempo. Ej: !timeout 30 ¡Hola!',
+  interval: 'Envía un mensaje repetido cada cierto tiempo hasta !stop.',
+  stop: 'Detiene countdown, interval y timeout activos.',
+  ia: 'Pregunta a la IA. Ej: !ia ¿...? (alias: !gpt)',
+  gpt: 'Pregunta a la IA. Ej: !gpt ¿...? (alias: !ia)',
+  elping: 'Explica qué hace el comando ping de forma graciosa.',
+  dedondeesnando: 'Cuenta de dónde es Nando.',
+  cartas: 'Responde un mensaje gracioso sobre cartas.',
+  patata: 'Envía un mensaje divertido relacionado con patatas.',
+  haz: 'Pide a la IA respuestas en formato JSON para uso en otros sistemas.',
+  jointo: 'Hace que el bot se una a otro canal (solo admin).',
+  leave: 'Hace que el bot salga de un canal o del canal actual (solo admin).',
+  to: 'Ejecuta un comando y envía solo el resultado en otro canal conectado.',
+  kingsbane: 'Comandos especiales para el canal buildingloud.',
+  ytprint: 'Conecta o desconecta el bot al chat de YouTube (solo admin).',
+  comandosnando: 'Muestra la lista de comandos disponibles.',
+  help: 'Explica el uso de un comando específico. Ej: !help ping'
+};
+
 export async function read(event) {
 
   // IA (Hypereal): ejemplo de uso
@@ -434,9 +459,28 @@ export async function read(event) {
     return;
   }
 
+  if (event.command.name === 'help' && checkCooldown('help')) {
+    const commandName = event.command.args[0]?.toLowerCase();
+    if (!commandName) {
+      await event.send('Uso: !help <comando>');
+      return;
+    }
+
+    let description = commandHelp[commandName];
+    if (!description && /^d(3|4|6|8|10|12|20)$/.test(commandName)) {
+      description = commandHelp.d;
+    }
+    if (!description && (commandName === 'ia' || commandName === 'gpt')) {
+      description = commandHelp.ia;
+    }
+
+    await event.send(description || 'No tengo una descripción para ese comando.');
+    return;
+  }
+
   // Comandos: !nandocomandos (lista de comandos disponibles)
   if (event.command.name === 'comandosnando' && checkCooldown('comandosnando')) {
-    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !timeout, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !to, !kingsbane, !ytprint');
+    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !timeout, !interval, !stop, !ia/!gpt, !help, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !to, !kingsbane, !ytprint');
     return;
   }
 
