@@ -423,17 +423,6 @@ export async function read(event) {
     return;
   }
 
-  if (event.command.name === 'cartas' && checkCooldown('cartas')) {
-    await event.send('No es verdad , las cartas no existen... o sí? (¬ - ¬)');
-    return;
-  }
-
-  if (event.command.name === 'patata' && checkCooldown('patata')) {
-    await event.send('!patata dorada');
-    await event.send('🥔  ');
-    return;
-  }
-
   //PREESCRITO
   if (event.command.name === 'elping' && checkCooldown('elping')) {
     await event.send('El ping es comando basico que me mandan para saber si respondo, y yo respondo "pong" cuando me etero o cuando me mandan el comando bien escrito \\(¬ - ¬)/');
@@ -692,6 +681,18 @@ export async function read(event) {
   //autocomander
   // la cueva del artista //
   if (event.channelName == "lacuevadelartista") {
+
+    if (event.command.name === 'cartas' && checkCooldown('cartas')) {
+      await event.send('No es verdad , las cartas no existen... o sí? (¬ - ¬)');
+      return;
+    }
+
+    if (event.command.name === 'patata' && checkCooldown('patata')) {
+      await event.send('!patata dorada');
+      await event.send('🥔  ');
+      return;
+    }
+
     if (checkCooldown('saludolacueva')) {
       const saludo = await pront("Eres un asistente para un bot de Twitch llamado NandoBot, saluda en el chat");
       await event.send(saludo);
