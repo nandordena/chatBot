@@ -60,13 +60,13 @@ function enqueueSay(fn) {
   sendQueue = sendQueue
     .then(async () => {
       if (myToken !== currentQueueToken) return; // La cola fue limpiada
-      
+
       const now = Date.now();
       const waitMs = Math.max(0, nextAllowedAt - now);
       if (waitMs) await sleep(waitMs);
-      
+
       if (myToken !== currentQueueToken) return; // La cola fue limpiada mientras esperaba
-      
+
       await fn();
       nextAllowedAt = Date.now() + MIN_SEND_INTERVAL_MS;
     })
@@ -78,6 +78,8 @@ function enqueueSay(fn) {
 
   return sendQueue;
 }
+
+global.enqueueSay = enqueueSay;
 
 client.on('message', async (channel, tags, message, self) => {
   // Si el comando lo escribe la MISMA cuenta del bot manualmente, Twitch puede contar ese

@@ -62,12 +62,24 @@ const isAdmin = (event) => {
   const channelName = event.channel?.replace('#', '').toLowerCase();
   return username === process.env.ADMIN_USERNAME?.toLowerCase() || username === channelName;
 };
+const autocallback = async (text) => {
+  e = {};
+  if ("^!.*".test(text)) {
+    e.command = {};
+    e.command.name = text.split(" ")[0].substring(1);
+    e.command.args = text.split(" ").slice(1);
+  } else {
+    e.text = text;
+  }
+  read(e);
+};
 
 // Variable y función de cooldown solicitada
 global.couldown = global.couldown || {};
 global.setCouldown = global.setCouldown || {};
 // Configuramos el cooldown (usamos el nombre del comando sin "!", igual que al llamarlo)
 global.setCouldown['patata'] = 1000 * 60 * 15;
+global.setCouldown['saludolacueva'] = 1000 * 60 * 60 * 2;
 
 const checkCooldown = (command, ms = 5000) => {
   // Si hay un cooldown configurado, lo usamos; si no, usamos el ms por defecto
@@ -320,7 +332,9 @@ export async function read(event) {
     return;
   }
 
-  // Stop: !stop (para la cuenta regresiva y el intervalo)
+
+
+  // Stop: !stop (para la cuenta regresiva, intervalo y timeout)
   if (event.command.name === 'stop' && checkCooldown('stop')) {
     if (!isAdmin(event)) {
       await event.send('No eres nando.');
@@ -337,6 +351,12 @@ export async function read(event) {
     if (global._timeoutInterval) {
       clearInterval(global._timeoutInterval);
       global._timeoutInterval = null;
+      stopped = true;
+    }
+
+    if (global._timeoutId) {
+      clearTimeout(global._timeoutId);
+      global._timeoutId = null;
       stopped = true;
     }
 
@@ -359,14 +379,47 @@ export async function read(event) {
     return;
   }
 
-  if (event.command.name === 'cartas' && checkCooldown('cartas')) {
-    await event.send('No es verdad , las cartas no existen... o sí? (¬ - ¬)');
-    return;
-  }
+  // Timeout: !timeout <segundos> <mensaje> o !timeout <minutos>m <mensaje>
+  if (event.command.name === 'timeout' && checkCooldown('timeout')) {
+    const firstArg = event.command.args[0];
+    const restArgs = event.command.args.slice(1);
 
-  if (event.command.name === 'patata' && checkCooldown('patata')) {
-    await event.send('!patata dorada');
-    await event.send('🥔  ');
+    if (!firstArg || restArgs.length === 0) {
+      await event.send('Uso: !timeout <segundos> <mensaje> o !timeout <minutos>m <mensaje>');
+      return;
+    }
+
+    let timeoutMs;
+    if (firstArg.toLowerCase().endsWith('m')) {
+      // Formato minutos: !timeout 5m mensaje
+      const minStr = firstArg.slice(0, -1);
+      if (!/^\d+$/.test(minStr)) {
+        await event.send('Uso: !timeout <segundos> <mensaje> o !timeout <minutos>m <mensaje>');
+        return;
+      }
+      const minutes = Math.min(Math.max(parseInt(minStr, 10), 1), 60); // max 60 minutos
+      timeoutMs = minutes * 60 * 1000;
+    } else {
+      // Formato segundos: !timeout 30 mensaje
+      if (!/^\d+$/.test(firstArg)) {
+        await event.send('Uso: !timeout <segundos> <mensaje> o !timeout <minutos>m <mensaje>');
+        return;
+      }
+      const seconds = Math.min(Math.max(parseInt(firstArg, 10), 1), 3600); // max 1 hora
+      timeoutMs = seconds * 1000;
+    }
+
+    const message = restArgs.join(' ');
+
+    // Confirmar que se programó el timeout
+    await event.send(`⏰ Mensaje programado para dentro de ${firstArg}`);
+
+    // Programar el envío del mensaje después del tiempo especificado
+    global._timeoutId = setTimeout(async () => {
+      await event.send(message);
+      global._timeoutId = null; // Limpiar cuando se ejecute
+    }, timeoutMs);
+
     return;
   }
 
@@ -383,7 +436,7 @@ export async function read(event) {
 
   // Comandos: !nandocomandos (lista de comandos disponibles)
   if (event.command.name === 'comandosnando' && checkCooldown('comandosnando')) {
-    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !kingsbane, !ytprint');
+    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !interval, !timeout, !stop, !ia/!gpt, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !to, !kingsbane, !ytprint');
     return;
   }
 
@@ -485,7 +538,7 @@ export async function read(event) {
         if (chatItem.timestamp && chatItem.timestamp < startTime) {
           return;
         }
-        
+
         // chatItem.message es un array que puede tener string (text) o emojis.
         const text = chatItem.message.map(p => p.text || '').join('');
         const author = chatItem.author.name;
@@ -555,8 +608,97 @@ export async function read(event) {
     return;
   }
 
+  // !to <canal> <comando> - Ejecutar un comando en otro canal conectado
+  if (event.command.name === 'to' && checkCooldown('to')) {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
+    const targetChannel = event.command.args[0];
+    const commandText = event.command.args.slice(1).join(' ').trim();
+
+    if (!targetChannel || !commandText) {
+      await event.send('Uso: !to <canal> <comando>');
+      return;
+    }
+
+    const channelName = targetChannel.startsWith('#') ? targetChannel : `#${targetChannel}`;
+
+    try {
+      // Parsear el comando para ejecutarlo internamente
+      const isCommand = commandText.startsWith('!');
+      const [rawName, ...args] = isCommand ? commandText.slice(1).split(/\s+/) : [];
+      const name = isCommand && rawName ? rawName.toLowerCase() : null;
+
+      // Función send personalizada para el canal destino
+      const targetSend = async (outText, opts = {}) => {
+        if (!outText || typeof outText !== 'string') return;
+
+        const trimmed = outText.trim() + " [🤖]";
+        if (!trimmed) return;
+
+        // Usar enqueueSay para respetar rate limiting
+        return enqueueSay(async () => {
+          if (opts.reply && event.tags?.id) {
+            try {
+              await event.client.say(channelName, trimmed, { replyParentMsgId: event.tags.id });
+              console.log(`[send] reply -> ${channelName}: ${trimmed}`);
+              return;
+            } catch {
+              // ignore y fallback
+            }
+          }
+
+          await event.client.say(channelName, trimmed);
+          console.log(`[send] -> ${channelName}: ${trimmed}`);
+        });
+      };
+
+      // Crear evento simulado para el canal destino
+      const targetEvent = {
+        ...event,
+        channel: channelName,
+        text: commandText,
+        message: commandText,
+        command: {
+          isCommand,
+          prefix: '!',
+          name,
+          args
+        },
+        send: targetSend
+      };
+
+      // Ejecutar el comando en el canal destino
+      await read(targetEvent);
+      await event.send(`✅ Comando ejecutado en ${channelName}`);
+    } catch (err) {
+      await event.send(`❌ Error al ejecutar comando en ${channelName}: ${err.message}`);
+    }
+    return;
+  }
 
   //autocomander
+  // la cueva del artista //
+  if (event.channelName == "lacuevadelartista") {
+
+    if (event.command.name === 'cartas' && checkCooldown('cartas')) {
+      await event.send('No es verdad , las cartas no existen... o sí? (¬ - ¬)');
+      return;
+    }
+
+    if (event.command.name === 'patata' && checkCooldown('patata')) {
+      await event.send('!patata dorada');
+      await event.send('🥔  ');
+      return;
+    }
+
+    if (checkCooldown('saludolacueva')) {
+      const saludo = await pront("Eres un asistente para un bot de Twitch llamado NandoBot, saluda en el chat");
+      await event.send(saludo);
+      autocallback("!interval 20m !ia cuenta un chiste sobre artistas, hasta que halcon_13 deje el MOD (ModAbuse ⚔️ 🚫)");
+    }
+  }
 
   //////// kingsbane@buildingloud ///////////
   if (event.channelName == "buildingloud") {
