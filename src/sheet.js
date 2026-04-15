@@ -480,12 +480,28 @@ export async function read(event) {
     return;
   }
 
-  // REACCIONES (no comando)
+  // REACCIONES (no comando)///////
   // Ojo: `event.message` y `event.text` son strings. No existe `event.message.content`.
   if (event.text.toLowerCase().includes('nandobot')) {
     await event.send('@' + event.user.displayName + ' Me has llamado? ¡Diga melon!');
     return;
   }
+  if (event.text.toLowerCase().includes('[inserte aqui')) {
+    const question = event.text;
+    const out = await pront(question, {
+      context: `
+        Eres un asistente que detecta cuando alguien dice '[inserte aqui' en el chat,
+        y respondes con el mensaje insertando etre los [] lo que pidan , de manera original y graciosa.
+        El tono debe ser informativo pero informal y divertido.
+        responderas en un chat de twitch, por lo que tus respuestas deben ser claras y concisas,
+        ideales para ese formato y no mas de 450 caracteres.
+      `
+      , max_output_tokens: 2000
+    });
+    if (out === 'FALSE') return;
+    await event.send(out);
+  }
+  ///////////////////////////////
 
   if (event.command.name === 'haz' && checkCooldown('haz')) {
     if (!isAdmin(event)) {
