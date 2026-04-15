@@ -718,12 +718,14 @@ export async function read(event) {
   }
 
   //autocomander
-
+  //////// kikeedev ///////////
   if (event.channelName === 'kikeedev') {
-    if (event.command.name === 'drop' && checkCooldown('drop')) {
-      await event.send('!drop');
-    }
+    // no esta funcionando no se porque
   }
+  if (event.command.name === 'drop' && checkCooldown('drop')) {
+    await event.send('!drop');
+  }
+  ///////////////////////////////
 
   // la cueva del artista //
   if (event.channelName == "lacuevadelartista") {
