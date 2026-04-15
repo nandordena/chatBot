@@ -80,6 +80,7 @@ global.setCouldown = global.setCouldown || {};
 // Configuramos el cooldown (usamos el nombre del comando sin "!", igual que al llamarlo)
 global.setCouldown['patata'] = 1000 * 60 * 15;
 global.setCouldown['saludolacueva'] = 1000 * 60 * 60 * 2;
+global.setCouldown['drop'] = 1000 * 20;
 
 const checkCooldown = (command, ms = 5000) => {
   // Si hay un cooldown configurado, lo usamos; si no, usamos el ms por defecto
@@ -108,16 +109,19 @@ const commandHelp = {
   gpt: 'Pregunta a la IA. Ej: !gpt ¿...? (alias: !ia)',
   elping: 'Explica qué hace el comando ping de forma graciosa.',
   dedondeesnando: 'Cuenta de dónde es Nando.',
-  cartas: 'Responde un mensaje gracioso sobre cartas.',
-  patata: 'Envía un mensaje divertido relacionado con patatas.',
+  proyecto: 'Cuenta en qué proyecto estoy trabajando actualmente.',
+  //cartas: 'Comando de canal',
+  //patata: 'Comando de canal',
+  //dorp: 'Comando de canal',
+  //kingsbane: 'Comandos especiales para el canal buildingloud.',
   haz: 'Pide a la IA respuestas en formato JSON para uso en otros sistemas.',
   jointo: 'Hace que el bot se una a otro canal (solo admin).',
   leave: 'Hace que el bot salga de un canal o del canal actual (solo admin).',
   to: 'Ejecuta un comando y envía solo el resultado en otro canal conectado.',
-  kingsbane: 'Comandos especiales para el canal buildingloud.',
   ytprint: 'Conecta o desconecta el bot al chat de YouTube (solo admin).',
   comandosnando: 'Muestra la lista de comandos disponibles.',
-  help: 'Explica el uso de un comando específico. Ej: !help ping'
+  help: 'Explica el uso de un comando específico. Ej: !help ping',
+  playlist: 'Muestra la lista de TEMASOS!',
 };
 
 export async function read(event) {
@@ -448,19 +452,9 @@ export async function read(event) {
     return;
   }
 
-  //PREESCRITO
-  if (event.command.name === 'elping' && checkCooldown('elping')) {
-    await event.send('El ping es comando basico que me mandan para saber si respondo, y yo respondo "pong" cuando me etero o cuando me mandan el comando bien escrito \\(¬ - ¬)/');
-    return;
-  }
-
-  if (event.command.name === 'dedondeesnando' && checkCooldown('dedondeesnando')) {
-    await event.send('Nando nació en Argentina, pero estudio y vive en españa hace años');
-    return;
-  }
-
   if (event.command.name === 'help' && checkCooldown('help')) {
-    const commandName = event.command.args[0]?.toLowerCase();
+    var commandName = event.command.args[0]?.toLowerCase();
+    commandName = commandName.replace("!", "");
     if (!commandName) {
       await event.send('Uso: !help <comando>');
       return;
@@ -480,7 +474,8 @@ export async function read(event) {
 
   // Comandos: !nandocomandos (lista de comandos disponibles)
   if (event.command.name === 'comandosnando' && checkCooldown('comandosnando')) {
-    await event.send('📋 Comandos: !ping, !hola, !d[3-20], !coin, !countdown, !timeout, !interval, !stop, !ia/!gpt, !help, !elping, !dedondeesnando, !cartas, !patata, !haz, !jointo, !leave, !to, !kingsbane, !ytprint');
+    const commandsList = Object.keys(commandHelp).map(cmd => `!${cmd}`).join(', ');
+    await event.send(`Comandos disponibles: ${commandsList}`);
     return;
   }
 
@@ -723,6 +718,13 @@ export async function read(event) {
   }
 
   //autocomander
+
+  if (event.channelName === 'kikeedev') {
+    if (event.command.name === 'drop' && checkCooldown('drop')) {
+      await event.send('!drop');
+    }
+  }
+
   // la cueva del artista //
   if (event.channelName == "lacuevadelartista") {
 
@@ -911,6 +913,29 @@ export async function read(event) {
     }
   }
   ///////////////////////////////
+
+  /////////////// preescritos ////////////////
+  //playlist
+  if (event.command.name === 'playlist' && checkCooldown('playlist')) {
+    await event.send('Aqui solo estan los temas que se lo merecen');
+    await event.send('https://open.spotify.com/playlist/5eGpHUmr0MHOTmxR9QTo7G');
+  }
+  //proyecto
+  if (event.command.name === 'proyecto' && checkCooldown('proyecto')) {
+    await event.send(`Estoy desarrolando un controllroom de pantallas
+      y proyectores, un anillo para controlarlas a todas`);
+  }
+  //elping 
+  if (event.command.name === 'elping' && checkCooldown('elping')) {
+    await event.send('El ping es comando basico que me mandan para saber si respondo, y yo respondo "pong" cuando me etero o cuando me mandan el comando bien escrito \\(¬ - ¬)/');
+    return;
+  }
+  //dedondeesnando
+  if (event.command.name === 'dedondeesnando' && checkCooldown('dedondeesnando')) {
+    await event.send('Nando nació en Argentina, pero estudio y vive en españa hace años');
+    return;
+  }
+  ////////////////////////////////////////////
 }
 
 // Import al final para que sea fácil “hojear” lógica arriba.
