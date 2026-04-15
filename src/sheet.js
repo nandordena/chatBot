@@ -80,6 +80,7 @@ global.setCouldown = global.setCouldown || {};
 // Configuramos el cooldown (usamos el nombre del comando sin "!", igual que al llamarlo)
 global.setCouldown['patata'] = 1000 * 60 * 15;
 global.setCouldown['saludolacueva'] = 1000 * 60 * 60 * 2;
+global.setCouldown['saludogierem_17'] = 1000 * 60 * 60 * 12;
 global.setCouldown['drop'] = 1000 * 20;
 
 const checkCooldown = (command, ms = 5000) => {
@@ -783,6 +784,13 @@ export async function read(event) {
       const saludo = await pront("Eres un asistente para un bot de Twitch llamado NandoBot, saluda en el chat");
       await event.send(saludo);
       autocallback("!interval 20m !ia cuenta un chiste sobre artistas, hasta que halcon_13 deje el MOD (ModAbuse ⚔️ 🚫)");
+    }
+  }
+
+  // gierem_17 //
+  if (event.channelName == "gierem_17") {
+    if (checkCooldown('saludogierem_17')) {
+      await event.send('pa cuendo serie de cobblemon?');
     }
   }
 
