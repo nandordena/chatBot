@@ -122,6 +122,7 @@ const commandHelp = {
   comandosnando: 'Muestra la lista de comandos disponibles.',
   help: 'Explica el uso de un comando específico. Ej: !help ping',
   playlist: 'Muestra la lista de TEMASOS!',
+  cobblemon: 'Pregunta a la IA sobre Minecraft Cobblemon.'
 };
 
 export async function read(event) {
@@ -493,7 +494,7 @@ export async function read(event) {
     }
     const question = event.command.args.join(' ').trim();
     if (!question) {
-      await event.send('Uso: !ai <pregunta>');
+      await event.send('Uso: !haz <orden>');
       return;
     }
     const out = await pront(question, {
@@ -714,6 +715,27 @@ export async function read(event) {
     } catch (err) {
       await event.send(`❌ Error al ejecutar comando en ${channelName}: ${err.message}`);
     }
+    return;
+  }
+
+  // !cobblemon - Preguntar a la IA sobre Cobblemon (mod de Minecraft)
+  if (event.command.name === 'cobblemon' && checkCooldown('cobblemon')) {
+    const question = event.command.args.join(' ').trim();
+    if (!question) {
+      await event.send('Uso: !cobblemon <pregunta>');
+      return;
+    }
+    const out = await pront(question, {
+      context: `
+        Eres un experto en Cobblemon, un mod de Minecraft que añade Pokémon al juego.
+        Responde a las preguntas sobre este mod: características, Pokémon disponibles,
+        recetas de creación, ubicaciones, estrategias, etc.
+        El tono debe ser informativo pero informal y divertido.
+        responderas en un chat de twitch, por lo que tus respuestas deben ser claras y concisas,
+        ideales para ese formato y no mas de 450 caracteres.
+      `
+    });
+    await event.send(out === 'FALSE' ? 'no se  ┑(o. o)┍' : out);
     return;
   }
 
