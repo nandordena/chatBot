@@ -897,7 +897,7 @@ export async function read(event) {
 
         // Parsear items (formato: "Enredadera x2 · Madera x5")
         const items = {};
-        const itemMatches = itemsStr.matchAll(/(\w?\s?\w+)\s+x(\d+)/g);
+        const itemMatches = itemsStr.matchAll(/(\w+?\s?\w+)\s+x(\d+)/g);
         for (const match of itemMatches) {
           items[match[1]] = parseInt(match[2], 10);
         }
