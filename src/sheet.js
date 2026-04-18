@@ -897,7 +897,7 @@ export async function read(event) {
 
         // Parsear items (formato: "Enredadera x2 · Madera x5")
         const items = {};
-        const itemMatches = itemsStr.matchAll(/(\w+)\s+x(\d+)/g);
+        const itemMatches = itemsStr.matchAll(/(\w?\s?\w+)\s+x(\d+)/g);
         for (const match of itemMatches) {
           items[match[1]] = parseInt(match[2], 10);
         }
@@ -984,10 +984,10 @@ export async function read(event) {
           }
 
           if (!itemForjado) {
-            await event.send(`Ahora mismo no puedo forjar nada, toy pobre`);
+            // await event.send(`Ahora mismo no puedo forjar nada, toy pobre`);
             // Si no puede forjar, pedir un chiste de pobres a la IA
-            const chiste = await pront("Dime un chiste corto y gracioso sobre ser pobre, en español, estilo informal de chat de Twitch");
-            await event.send(chiste);
+            // const chiste = await pront("Dime un chiste corto y gracioso sobre ser pobre, en español, estilo informal de chat de Twitch");
+            // await event.send(chiste);
           }
 
           // VENTA: vender todo lo que supere 50 unidades
