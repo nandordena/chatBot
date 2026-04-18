@@ -59,7 +59,6 @@
 // Función helper para verificar si el usuario es el Admin
 const isAdmin = (event) => {
   const username = event.user.username?.toLowerCase();
-  const channelName = event.channel?.replace('#', '').toLowerCase();
   return username === process.env.ADMIN_USERNAME?.toLowerCase() || username === channelName;
 };
 const autocallback = async (text) => {
@@ -127,6 +126,13 @@ const commandHelp = {
 };
 
 export async function read(event) {
+  const channelName = event.channel?.replace('#', '').toLowerCase();
+
+  // PING
+  if (event.command.name === 'ping' && checkCooldown('ping')) {
+    await event.send('pong');
+    return;
+  }
 
   // IA (Hypereal): ejemplo de uso
   // Escribe: !ai tu pregunta
@@ -149,11 +155,74 @@ export async function read(event) {
     return;
   }
 
-  if (event.command.name === 'ping' && checkCooldown('ping')) {
-    await event.send('pong');
+  // HAZ
+  if (event.command.name === 'haz' && checkCooldown('haz')) {
+    if (!isAdmin(event)) {
+      await event.send('No eres nando.');
+      return;
+    }
+    const question = event.command.args.join(' ').trim();
+    if (!question) {
+      await event.send('Uso: !haz <orden>');
+      return;
+    }
+    const out = await pront(question, {
+      context: `
+        eres un asistente de escritura en un chat de twitch / youtube / u otras plataformas,
+        ayudas a escribir mensajes cortos y divertidos para responder a los usuarios, el tono es informal y gracioso,
+        y a veces un poco irreverente.
+        como respuesta devolveras un array en json sin comillas antes o despues del array
+        para no interferir con comando JSON.parse de NODE; ejemplo [<message1>,<message2>].
+        con cada uno de los chats que quieres que se publique y el para un softwar 
+        conectado a la api que recorrera ese array y mandara cada uno de estos mensajes. 
+        en el chat esto se activa con el comando !haz por lo que se espera que tu rellenes 
+        este array con resultados de la orden a hacer.
+        Si te piden que escibas comandos , no añadas comentarios despues de la ejecucion del comando,
+        si quieres hacer comentarios hazlo en un linea nueva.
+      `
+      , max_output_tokens: 2000
+    });
+    let responses;
+    try {
+      responses = JSON.parse(out);
+    } catch (e) {
+      await event.send(out === 'FALSE' ? 'no se hacer esto (╯‵□′)╯︵┻━┻' : out);
+      return;
+    }
+
+    if (Array.isArray(responses)) {
+      for (const msg of responses) {
+        // Enviar sin await para que se agreguen de golpe a la cola (y !stop pueda descartarlas luego)
+        event.send(msg).catch(e => console.error(e));
+      }
+    } else {
+      await event.send(out);
+    }
     return;
   }
 
+  // !cobblemon - Preguntar a la IA sobre Cobblemon (mod de Minecraft)
+  if (event.command.name === 'cobblemon' && checkCooldown('cobblemon')) {
+    const question = event.command.args.join(' ').trim();
+    if (!question) {
+      await event.send('Uso: !cobblemon <pregunta>');
+      return;
+    }
+    const out = await pront(question, {
+      context: `
+        Eres un experto en Cobblemon, un mod de Minecraft que añade Pokémon al juego.
+        Responde a las preguntas sobre este mod: características, Pokémon disponibles,
+        recetas de creación, ubicaciones, estrategias, etc.
+        El tono debe ser informativo pero informal y divertido.
+        responderas en un chat de twitch, por lo que tus respuestas deben ser claras y concisas,
+        ideales para ese formato y no mas de 450 caracteres.
+      `
+    });
+    await event.send(out === 'FALSE' ? 'no se  ┑(o. o)┍' : out);
+    return;
+  }
+
+  // HOLA
   if (event.command.name === 'hola' && checkCooldown('hola')) {
     const name = event.user.displayName ?? event.user.username ?? 'chat';
     await event.send(`Hola, @${name}`);
@@ -166,7 +235,6 @@ export async function read(event) {
   if (event?.command?.name) {
     diceMatch = event.command.name.match(/^d(3|4|6|8|10|12|20)$/);
   }
-
   if (diceMatch && checkCooldown('dice')) {
     const type = parseInt(diceMatch[1], 10);
 
@@ -191,6 +259,15 @@ export async function read(event) {
       }
     }
     await event.send(rolls.join(' '));
+    return;
+  }
+
+  // COIN
+  if (event.command.name === 'coin' && checkCooldown('coin')) {
+    const result = Math.random() < 0.5 ? 'cara' : 'cruz';
+    const face = result === 'cara' ? '((ツ))' : '((✗))';
+    //await event.send(`${face} ${result}`);
+    await event.send(`${face}`);
     return;
   }
 
@@ -236,14 +313,6 @@ export async function read(event) {
     } catch (e) {
       await event.send('Error en la operación. Revisa que esté bien escrita.');
     }
-    return;
-  }
-
-  if (event.command.name === 'coin' && checkCooldown('coin')) {
-    const result = Math.random() < 0.5 ? 'cara' : 'cruz';
-    const face = result === 'cara' ? '((ツ))' : '((✗))';
-    //await event.send(`${face} ${result}`);
-    await event.send(`${face}`);
     return;
   }
 
@@ -363,8 +432,6 @@ export async function read(event) {
     return;
   }
 
-
-
   // Stop: !stop (para la cuenta regresiva, intervalo y timeout)
   if (event.command.name === 'stop' && checkCooldown('stop')) {
     if (!isAdmin(event)) {
@@ -454,6 +521,7 @@ export async function read(event) {
     return;
   }
 
+  // HELP
   if (event.command.name === 'help' && checkCooldown('help')) {
     var commandName = event.command.args[0]?.toLowerCase();
     commandName = commandName.replace("!", "");
@@ -503,51 +571,6 @@ export async function read(event) {
     await event.send(out);
   }
   ///////////////////////////////
-
-  if (event.command.name === 'haz' && checkCooldown('haz')) {
-    if (!isAdmin(event)) {
-      await event.send('No eres nando.');
-      return;
-    }
-    const question = event.command.args.join(' ').trim();
-    if (!question) {
-      await event.send('Uso: !haz <orden>');
-      return;
-    }
-    const out = await pront(question, {
-      context: `
-        eres un asistente de escritura en un chat de twitch / youtube / u otras plataformas,
-        ayudas a escribir mensajes cortos y divertidos para responder a los usuarios, el tono es informal y gracioso,
-        y a veces un poco irreverente.
-        como respuesta devolveras un array en json sin comillas antes o despues del array
-        para no interferir con comando JSON.parse de NODE; ejemplo [<message1>,<message2>].
-        con cada uno de los chats que quieres que se publique y el para un softwar 
-        conectado a la api que recorrera ese array y mandara cada uno de estos mensajes. 
-        en el chat esto se activa con el comando !haz por lo que se espera que tu rellenes 
-        este array con resultados de la orden a hacer.
-        Si te piden que escibas comandos , no añadas comentarios despues de la ejecucion del comando,
-        si quieres hacer comentarios hazlo en un linea nueva.
-      `
-      , max_output_tokens: 2000
-    });
-    let responses;
-    try {
-      responses = JSON.parse(out);
-    } catch (e) {
-      await event.send(out === 'FALSE' ? 'no se hacer esto (╯‵□′)╯︵┻━┻' : out);
-      return;
-    }
-
-    if (Array.isArray(responses)) {
-      for (const msg of responses) {
-        // Enviar sin await para que se agreguen de golpe a la cola (y !stop pueda descartarlas luego)
-        event.send(msg).catch(e => console.error(e));
-      }
-    } else {
-      await event.send(out);
-    }
-    return;
-  }
 
   // !ytprint <liveid> - Conectarse a chat de youtube
   if (event.command.name === 'ytprint' && checkCooldown('ytprint')) {
@@ -679,7 +702,7 @@ export async function read(event) {
       return;
     }
 
-    const channelName = targetChannel.startsWith('#') ? targetChannel : `#${targetChannel}`;
+    channelName = targetChannel.startsWith('#') ? targetChannel : `#${targetChannel}`;
 
     try {
       // Parsear el comando para ejecutarlo internamente
@@ -735,30 +758,9 @@ export async function read(event) {
     return;
   }
 
-  // !cobblemon - Preguntar a la IA sobre Cobblemon (mod de Minecraft)
-  if (event.command.name === 'cobblemon' && checkCooldown('cobblemon')) {
-    const question = event.command.args.join(' ').trim();
-    if (!question) {
-      await event.send('Uso: !cobblemon <pregunta>');
-      return;
-    }
-    const out = await pront(question, {
-      context: `
-        Eres un experto en Cobblemon, un mod de Minecraft que añade Pokémon al juego.
-        Responde a las preguntas sobre este mod: características, Pokémon disponibles,
-        recetas de creación, ubicaciones, estrategias, etc.
-        El tono debe ser informativo pero informal y divertido.
-        responderas en un chat de twitch, por lo que tus respuestas deben ser claras y concisas,
-        ideales para ese formato y no mas de 450 caracteres.
-      `
-    });
-    await event.send(out === 'FALSE' ? 'no se  ┑(o. o)┍' : out);
-    return;
-  }
-
   //autocomander
   //////// kikeedev ///////////
-  if (event.channelName === 'kikeedev') {
+  if (channelName === 'kikeedev') {
     // no esta funcionando no se porque
   }
   if (event.command.name === 'drop' && checkCooldown('drop')) {
@@ -767,7 +769,7 @@ export async function read(event) {
   ///////////////////////////////
 
   // la cueva del artista //
-  if (event.channelName == "lacuevadelartista") {
+  if (channelName == "lacuevadelartista") {
 
     if (event.command.name === 'cartas' && checkCooldown('cartas')) {
       await event.send('No es verdad , las cartas no existen... o sí? (¬ - ¬)');
@@ -788,20 +790,46 @@ export async function read(event) {
   }
 
   // gierem_17 //
-  if (event.channelName == "gierem_17") {
+  if (channelName == "gierem_17") {
     if (checkCooldown('saludogierem_17')) {
       await event.send('pa cuendo serie de cobblemon?');
     }
   }
 
   //////// kingsbane@buildingloud ///////////
-  if (event.channelName == "buildingloud") {
+  if (
+    channelName == "buildingloud"
+    || channelName == "nandordena"
+  ) {
+    global.kingsbane = global.kingsbane || {};
+    global.kingsbane.forja = [
+      {
+        "nombre": "Fardo",
+        "materiales": { "cuero": 25, "enredadera": 20, "mochipocha": 1 },
+        "oro": 250
+      },
+      {
+        "nombre": "lanza_hueso",
+        "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "lanza_piedra": 1 },
+        "oro": 250
+      },
+      {
+        "nombre": "Cuero",
+        "cantidad": "todo",
+        "materiales": { "piel": 5, },
+        "oro": 0
+      },
+    ];
+
     if (event.command.name === 'kingsbane' && checkCooldown('kingsbane')) {
       if (!isAdmin(event)) {
         await event.send('No eres nando.');
         return;
       }
       await event.send('!interval 5m !anclar');
+      await event.send('!mochila');
+      await event.send('!almacen');
+      await event.send('!donde');
     }
     if (event.text.includes('@nandordena →') && checkCooldown('@nandordena →')) {
       // Parsear inventario del mensaje de mochila
@@ -849,115 +877,112 @@ export async function read(event) {
           & global.kingsbane.votar) await event.send(`!votar ${zonaDestino}`);
       }
 
-    }
+      switch (global.kingsbane.site.toLowerCase()) {
+        case "ciudadela": {
+          // decisiones en la ciudadela
+          // Revisar forja y fabricar primer item posible
+          const stock = global._inventory?.items || {};
+          let itemForjado = false;
 
-    global.kingsbane.forja = [
-      {
-        "nombre": "Fardo",
-        "materiales": { "cuero": 25, "enredadera": 20, "mochipocha": 1 },
-        "oro": 250
-      },
-      {
-        "nombre": "lanza_hueso",
-        "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "lanza_piedra": 1 },
-        "oro": 250
-      },
-      {
-        "nombre": "Cuero",
-        "cantidad": "todo",
-        "materiales": { "piel": 5, },
-        "oro": 0
-      },
-    ];
-    if (event.text.includes("La colmena se mueve a: 🏰 La Ciudadela") && checkCooldown('La colmena se mueve a: 🏰 La Ciudadela')) {
-      // decisiones en la ciudadela
-      // Revisar forja y fabricar primer item posible
-      const stock = global._inventory?.items || {};
-      let itemForjado = false;
+          // FORJA
+          for (const item of global.kingsbane.forja) {
+            let puedeFabricar = true;
+            for (const [material, cantidad] of Object.entries(item.materiales)) {
+              const materialLower = material.toLowerCase();
+              const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
+              if (!stockKey || (stock[stockKey] || 0) < cantidad) {
+                puedeFabricar = false;
+                break;
+              }
+            }
+            if (puedeFabricar) {
+              // Calcular cantidad máxima posible según recursos
+              let maxPosible = Infinity;
+              for (const [material, cantidad] of Object.entries(item.materiales)) {
+                const materialLower = material.toLowerCase();
+                const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
+                const disponibles = stock[stockKey] || 0;
+                const posible = Math.floor(disponibles / cantidad);
+                maxPosible = Math.min(maxPosible, posible);
+              }
 
-      // FORJA
-      for (const item of global.kingsbane.forja) {
-        let puedeFabricar = true;
-        for (const [material, cantidad] of Object.entries(item.materiales)) {
-          const materialLower = material.toLowerCase();
-          const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
-          if (!stockKey || (stock[stockKey] || 0) < cantidad) {
-            puedeFabricar = false;
-            break;
-          }
-        }
-        if (puedeFabricar) {
-          // Calcular cantidad máxima posible según recursos
-          let maxPosible = Infinity;
-          for (const [material, cantidad] of Object.entries(item.materiales)) {
-            const materialLower = material.toLowerCase();
-            const stockKey = Object.keys(stock).find(k => k.toLowerCase() === materialLower);
-            const disponibles = stock[stockKey] || 0;
-            const posible = Math.floor(disponibles / cantidad);
-            maxPosible = Math.min(maxPosible, posible);
-          }
+              // Determinar cantidad a fabricar
+              let cantidadFabricar = 1;
+              if (item.cantidad) {
+                if (item.cantidad.toLowerCase() === 'todo') {
+                  // Fabricar el máximo posible
+                  cantidadFabricar = maxPosible;
+                } else {
+                  // Usar la cantidad especificada, sin superar el máximo posible
+                  cantidadFabricar = Math.min(item.cantidad, maxPosible);
+                }
+              }
 
-          // Determinar cantidad a fabricar
-          let cantidadFabricar = 1;
-          if (item.cantidad) {
-            if (item.cantidad.toLowerCase() === 'todo') {
-              // Fabricar el máximo posible
-              cantidadFabricar = maxPosible;
-            } else {
-              // Usar la cantidad especificada, sin superar el máximo posible
-              cantidadFabricar = Math.min(item.cantidad, maxPosible);
+              await event.send(`!forja ${item.nombre} ${cantidadFabricar}`);
+
+              // Eliminar el item forjado de la lista de forja solo si se fabricó todo lo posible o cantidad especificada
+              if (cantidadFabricar === maxPosible || (item.cantidad && item.cantidad.toLowerCase() !== 'todo' && cantidadFabricar >= item.cantidad)) {
+                const index = global.kingsbane.forja.indexOf(item);
+                if (index > -1) {
+                  global.kingsbane.forja.splice(index, 1);
+                }
+              }
+              itemForjado = true;
+              break;
             }
           }
 
-          await event.send(`!forja ${item.nombre} ${cantidadFabricar}`);
+          if (!itemForjado) {
+            await event.send(`Ahora mismo no puedo forjar nada, toy pobre`);
+            // Si no puede forjar, pedir un chiste de pobres a la IA
+            const chiste = await pront("Dime un chiste corto y gracioso sobre ser pobre, en español, estilo informal de chat de Twitch");
+            await event.send(chiste);
+          }
 
-          // Eliminar el item forjado de la lista de forja solo si se fabricó todo lo posible o cantidad especificada
-          if (cantidadFabricar === maxPosible || (item.cantidad && item.cantidad.toLowerCase() !== 'todo' && cantidadFabricar >= item.cantidad)) {
-            const index = global.kingsbane.forja.indexOf(item);
-            if (index > -1) {
-              global.kingsbane.forja.splice(index, 1);
+          // VENTA: vender todo lo que supere 50 unidades
+          const LIMITE_ALMACEN = 50;
+
+          for (const [item, cantidad] of Object.entries(stock)) {
+            if (cantidad > LIMITE_ALMACEN) {
+              const cantidadVender = cantidad - LIMITE_ALMACEN;
+              await event.send(`!vender ${item} ${cantidadVender}`);
             }
           }
-          itemForjado = true;
           break;
         }
+        default:
+          break;
       }
 
-      if (!itemForjado) {
-        await event.send(`Ahora mismo no puedo forjar nada, toy pobre`);
-        // Si no puede forjar, pedir un chiste de pobres a la IA
-        const chiste = await pront("Dime un chiste corto y gracioso sobre ser pobre, en español, estilo informal de chat de Twitch");
-        await event.send(chiste);
-      }
-
-      // VENTA: vender todo lo que supere 50 unidades
-      const LIMITE_ALMACEN = 50;
-
-      for (const [item, cantidad] of Object.entries(stock)) {
-        if (cantidad > LIMITE_ALMACEN) {
-          const cantidadVender = cantidad - LIMITE_ALMACEN;
-          await event.send(`!vender ${item} ${cantidadVender}`);
-        }
-      }
+    }
+    if (
+      (
+        event.text.includes("colmena se mueve")
+        || event.text.includes("estamos en")
+      )
+    ) {
+      if (event.text.toLowerCase().includes("ciudadela")) global.kingsbane.site = "ciudadela";
+      else if (event.text.toLowerCase().includes("bosque")) global.kingsbane.site = "bosque";
+      else if (event.text.toLowerCase().includes("mina")) global.kingsbane.site = "mina";
+      else if (event.text.toLowerCase().includes("caza")) global.kingsbane.site = "caza";
+      else if (event.text.toLowerCase().includes("pesca")) global.kingsbane.site = "pesca";
     }
     if (event.text.includes("¡Votación ABIERTA!") && checkCooldown('¡Votación ABIERTA!')) {
       global._site = event.text.match(/(\w+).\s¿Cambio/g);
       if (global._site == "Ciudadela") await event.send('!almacen');
       else await event.send('!mochila');
     }
-    var kingsbaneMatch = false;
-    if (event?.command?.name) {
-      kingsbaneMatch = event.command.name.match(/^kingsbane\.(\w+)$/);
-    }
-
-    if (kingsbaneMatch && checkCooldown('kingsbaneMatch')) {
-      attrMatch = event.command.name.match(/^kingsbane\.\w+\s(\w+)$/);
-      if (attrMatch) {
-        if (attrMatch == "false") attrMatch = false;
-        if (attrMatch == "true") attrMatch = true;
-        global.kingsbane[kingsbaneMatch] = attrMatch;
-      }
-
+  }
+  var kingsbaneMatch = false;
+  if (event?.command?.name) {
+    kingsbaneMatch = event.command.name.match(/^kingsbane\.(\w+)$/);
+  }
+  if (kingsbaneMatch && checkCooldown('kingsbaneMatch')) {
+    attrMatch = event.command.name.match(/^kingsbane\.\w+\s(\w+)$/);
+    if (attrMatch) {
+      if (attrMatch == "false") attrMatch = false;
+      if (attrMatch == "true") attrMatch = true;
+      global.kingsbane[kingsbaneMatch] = attrMatch;
     }
   }
   ///////////////////////////////
@@ -971,17 +996,11 @@ export async function read(event) {
   //proyecto
   if (event.command.name === 'proyecto' && checkCooldown('proyecto')) {
     await event.send(`Estoy desarrolando un controllroom de pantallas
-      y proyectores, un anillo para controlarlas a todas`);
-  }
-  //elping 
-  if (event.command.name === 'elping' && checkCooldown('elping')) {
-    await event.send('El ping es comando basico que me mandan para saber si respondo, y yo respondo "pong" cuando me etero o cuando me mandan el comando bien escrito \\(¬ - ¬)/');
-    return;
+        y proyectores, un anillo para controlarlas a todas`);
   }
   //dedondeesnando
   if (event.command.name === 'dedondeesnando' && checkCooldown('dedondeesnando')) {
     await event.send('Nando nació en Argentina, pero estudio y vive en españa hace años');
-    return;
   }
   ////////////////////////////////////////////
 }
