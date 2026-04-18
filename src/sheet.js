@@ -801,25 +801,81 @@ export async function read(event) {
     channelName == "buildingloud"
     || channelName == "nandordena"
   ) {
+    // Guardar en variable global
     global.kingsbane = global.kingsbane || {};
-    global.kingsbane.forja = [
-      {
-        "nombre": "Fardo",
-        "materiales": { "cuero": 25, "enredadera": 20, "mochipocha": 1 },
-        "oro": 250
-      },
-      {
-        "nombre": "lanza_hueso",
-        "materiales": { "hueso": 25, "madera": 30, "enredadera": 25, "lanza_piedra": 1 },
-        "oro": 250
-      },
-      {
-        "nombre": "Cuero",
-        "cantidad": "todo",
-        "materiales": { "piel": 5, },
-        "oro": 0
-      },
-    ];
+    global.kingsbane = {
+      "items": {},
+      "used": {},
+      "capacity": 0,
+      "forja": [
+        {
+          "nombre": "Morral",
+          "materiales": { "Cuero": 50, "Perla": 10, "Zurrón": 1, "Cuerda": 10 },
+          "oro": 2500
+        },
+        {
+          "nombre": "hacha_cobre",
+          "materiales": { "cuerda": 10, "madera roble": 20, "lingote cobre": 5, "Hacha chatarra": 1 },
+          "oro": 2500
+        },
+        {
+          "nombre": "pico_cobre",
+          "materiales": { "cuerda": 10, "madera roble": 20, "lingote cobre": 5, "pico chatarra": 1 },
+          "oro": 2500
+        },
+        {
+          "nombre": "lanza_cobre",
+          "materiales": { "cuerda": 10, "madera roble": 20, "lingote cobre": 5, "lanza chatarra": 1 },
+          "oro": 2500
+        },
+        {
+          "nombre": "caña_cobre",
+          "materiales": { "cuerda": 10, "madera roble": 20, "lingote cobre": 5, "caña chatarra": 1 },
+          "oro": 2500
+        },
+        {
+          "nombre": "espada_hueso",
+          "materiales": { "fibra": 10, "hueso": 25, "espada piedra": 1 },
+          "oro": 2500
+        },
+        {
+          "nombre": "espada_chatarra",
+          "materiales": { "enredadera": 25, "hueso": 25, "espada piedra": 1 },
+          "oro": 2500
+        },
+        {
+          "nombre": "espada_cobre",
+          "materiales": { "cuerda": 10, "madera roble": 20, "lingote cobre": 5, "espada chatarra": 1 },
+          "oro": 2500
+        },
+        {
+          "nombre": "Cuero",
+          "cantidad": "todo",
+          "materiales": { "piel": 5, },
+          "oro": 0
+        },
+        {
+          "nombre": "Cuerda",
+          "cantidad": 10,
+          "materiales": { "Fibra": 3, },
+          "oro": 0
+        },
+        {
+          "nombre": "lingote_cobre",
+          "cantidad": "todo",
+          "materiales": { "Cobre": 5, },
+          "oro": 0
+        },
+        {
+          "nombre": "aceite",
+          "cantidad": "todo",
+          "materiales": { "Grasa": 2, "Pescado": 5 },
+          "oro": 0
+        },
+      ],
+      "site": "ciudadela",
+      "usables": ["almeja", "roca_misteriosa "],
+    };
 
     if (event.command.name === 'kingsbane' && checkCooldown('kingsbane')) {
       if (!isAdmin(event)) {
@@ -833,7 +889,7 @@ export async function read(event) {
     }
     if (event.text.includes('@nandordena →') && checkCooldown('@nandordena →')) {
       // Parsear inventario del mensaje de mochila
-      const inventoryMatch = event.text.match(/.*@\w+ → \[(.*?)\] \| 📦 (\d+)\/(\d+)/);
+      const inventoryMatch = event.text.match(/.*@\w+ → \[(.*?)\] \|.*\s(\d+)\/(\d+)/);
       if (inventoryMatch) {
         const itemsStr = inventoryMatch[1];
         const used = parseInt(inventoryMatch[2], 10);
@@ -845,18 +901,13 @@ export async function read(event) {
         for (const match of itemMatches) {
           items[match[1]] = parseInt(match[2], 10);
         }
-
-        // Guardar en variable global
-        global._inventory = {
-          items,
-          used,
-          capacity
-        };
-
-        console.log('Inventario actualizado:', global._inventory);
+        global.kingsbane.items = items;
+        global.kingsbane.used = used;
+        global.kingsbane.capacity = capacity;
+        console.log('Inventario actualizado:', global.kingsbane);
       }
       // Definimos grupos de materiales por bioma según las fuentes
-      const stock = global._inventory.items;
+      const stock = global.kingsbane.items;
 
       const materiales = {
         bosque: (stock["Madera"] || 0) + (stock["Madera roble"] || 0) + (stock["Enredadera"] || 0) + (stock["Resina"] || 0),
@@ -866,14 +917,14 @@ export async function read(event) {
       };
 
       // Regla de decisión
-      if (global._inventory.used / global._inventory.capacity >= 0.8) {
+      if (global.kingsbane.used / global.kingsbane.capacity >= 0.8) {
         // Prioridad: Vaciar mochila para evitar la Ira de G.E.N.I.O. [4]
-        if (global._site != "Ciudadela" & global.kingsbane.votar) await event.send('!votar ciudadela');
+        if (global.kingsbane.site != "Ciudadela" & global.kingsbane.votar) await event.send('!votar ciudadela');
       } else {
         // Selecciona la zona con el valor numérico más bajo en el objeto 'materiales'
         const zonaDestino = Object.keys(materiales).reduce((a, b) => materiales[a] < materiales[b] ? a : b);
 
-        if (global._site.toLowerCase != zonaDestino
+        if (global.kingsbane.site.toLowerCase != zonaDestino
           & global.kingsbane.votar) await event.send(`!votar ${zonaDestino}`);
       }
 
@@ -881,7 +932,7 @@ export async function read(event) {
         case "ciudadela": {
           // decisiones en la ciudadela
           // Revisar forja y fabricar primer item posible
-          const stock = global._inventory?.items || {};
+          const stock = global.kingsbane?.items || {};
           let itemForjado = false;
 
           // FORJA
@@ -950,7 +1001,14 @@ export async function read(event) {
           }
           break;
         }
-        default:
+        default: {
+          // decisiones fuera de la ciudadela
+          global.kingsbane.usables.forEach(async (usable) => {
+            if (global.kingsbane.items[usable.replace("_", " ")] > 0) {
+              await event.send(`!usar ${usable} `);
+            }
+          });
+        }
           break;
       }
 
@@ -966,10 +1024,14 @@ export async function read(event) {
       else if (event.text.toLowerCase().includes("mina")) global.kingsbane.site = "mina";
       else if (event.text.toLowerCase().includes("caza")) global.kingsbane.site = "caza";
       else if (event.text.toLowerCase().includes("pesca")) global.kingsbane.site = "pesca";
+
+      if (global.kingsbane.site === "ciudadela") {
+        await event.send('!almacen');
+      }
     }
     if (event.text.includes("¡Votación ABIERTA!") && checkCooldown('¡Votación ABIERTA!')) {
-      global._site = event.text.match(/(\w+).\s¿Cambio/g);
-      if (global._site == "Ciudadela") await event.send('!almacen');
+      global.kingsbane.site = event.text.match(/(\w+).\s¿Cambio/g);
+      if (global.kingsbane.site == "Ciudadela") await event.send('!almacen');
       else await event.send('!mochila');
     }
   }
