@@ -59,6 +59,7 @@
 // Función helper para verificar si el usuario es el Admin
 const isAdmin = (event) => {
   const username = event.user.username?.toLowerCase();
+  const channelName = event.channel?.replace('#', '').toLowerCase();
   return username === process.env.ADMIN_USERNAME?.toLowerCase() || username === channelName;
 };
 const autocallback = async (text) => {
@@ -81,6 +82,8 @@ global.setCouldown['patata'] = 1000 * 60 * 15;
 global.setCouldown['saludolacueva'] = 1000 * 60 * 60 * 2;
 global.setCouldown['saludogierem_17'] = 1000 * 60 * 60 * 12;
 global.setCouldown['drop'] = 1000 * 20;
+global.setCouldown['saludostd'] = 1000 * 60 * 60 * 12;
+
 
 const checkCooldown = (command, ms = 5000) => {
   // Si hay un cooldown configurado, lo usamos; si no, usamos el ms por defecto
@@ -128,6 +131,13 @@ const commandHelp = {
 export async function read(event) {
   const channelName = event.channel?.replace('#', '').toLowerCase();
 
+  if (
+    checkCooldown('saludostd')
+    && !['buildingloud'].includes(channelName)
+  ) {
+    await event.send(`🤖 Hola, soy un bot si, pero NO vendo follows 😉, solo paso a lurkear y divertirme. @${channelName} puede hacer !leave para hecharme, para todo lo demas !comandosnando`);
+  }
+
   // PING
   if (event.command.name === 'ping' && checkCooldown('ping')) {
     await event.send('pong');
@@ -147,7 +157,7 @@ export async function read(event) {
   ) {
     const question = event.command.args.join(' ').trim();
     if (!question) {
-      await event.send('Uso: !ai <pregunta>');
+      await event.send(`Uso: ${event.command?.name} <pregunta>`);
       return;
     }
     const out = await pront(question);
@@ -1029,11 +1039,11 @@ export async function read(event) {
         await event.send('!almacen');
       }
     }
-    if (event.text.includes("¡Votación ABIERTA!") && checkCooldown('¡Votación ABIERTA!')) {
-      global.kingsbane.site = event.text.match(/(\w+).\s¿Cambio/g);
-      if (global.kingsbane.site == "Ciudadela") await event.send('!almacen');
-      else await event.send('!mochila');
-    }
+    //if (event.text.includes("¡Votación ABIERTA!") && checkCooldown('¡Votación ABIERTA!')) {
+    //  global.kingsbane.site = event.text.match(/(\w+).\s¿Cambio/g);
+    // // if (global.kingsbane.site == "Ciudadela") await event.send('!almacen');
+    // // else await event.send('!mochila');
+    //}
   }
   var kingsbaneMatch = false;
   if (event?.command?.name) {
