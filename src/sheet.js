@@ -1009,7 +1009,7 @@ export async function read(event) {
               && !["Enredadera"].includes(item) //no vender
             ) {
               const cantidadVender = cantidad - LIMITE_ALMACEN;
-              await event.send(`!vender ${item} ${cantidadVender}`);
+              await event.send(`!vender ${item.replace(" ", "_")} ${cantidadVender}`);
             }
           }
           break;
