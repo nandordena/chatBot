@@ -1004,7 +1004,10 @@ export async function read(event) {
           const LIMITE_ALMACEN = 50;
 
           for (const [item, cantidad] of Object.entries(stock)) {
-            if (cantidad > LIMITE_ALMACEN) {
+            if (
+              cantidad > LIMITE_ALMACEN
+              && !["Enredadera"].includes(item) //no vender
+            ) {
               const cantidadVender = cantidad - LIMITE_ALMACEN;
               await event.send(`!vender ${item} ${cantidadVender}`);
             }
