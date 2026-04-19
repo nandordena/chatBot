@@ -979,7 +979,7 @@ export async function read(event) {
                 }
               }
 
-              await event.send(`!forja ${item.nombre} ${cantidadFabricar}`);
+              await event.send(`!forjar ${item.nombre} ${cantidadFabricar}`);
 
               // Eliminar el item forjado de la lista de forja solo si se fabricó todo lo posible o cantidad especificada
               if (cantidadFabricar === maxPosible || (item.cantidad && item.cantidad.toLowerCase() !== 'todo' && cantidadFabricar >= item.cantidad)) {
