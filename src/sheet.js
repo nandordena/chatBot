@@ -1001,7 +1001,7 @@ export async function read(event) {
           for (const [item, cantidad] of Object.entries(stock)) {
             if (
               cantidad > LIMITE_ALMACEN
-              && !["Enredadera"].includes(item) //no vender
+              && !["Enredadera", "Piel"].includes(item) //no vender
             ) {
               const cantidadVender = cantidad - LIMITE_ALMACEN;
               await event.send(`!vender ${item.replace(" ", "_")} ${cantidadVender}`);
