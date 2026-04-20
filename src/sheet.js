@@ -834,11 +834,6 @@ export async function read(event) {
           "oro": 2500
         },
         {
-          "nombre": "lanza_cobre",
-          "materiales": { "cuerda": 10, "madera roble": 20, "lingote cobre": 5, "lanza chatarra": 1 },
-          "oro": 2500
-        },
-        {
           "nombre": "caña_cobre",
           "materiales": { "cuerda": 10, "madera roble": 20, "lingote cobre": 5, "caña chatarra": 1 },
           "oro": 2500
@@ -897,7 +892,7 @@ export async function read(event) {
       await event.send('!almacen');
       await event.send('!donde');
     }
-    if (event.text.includes('@nandordena →') && checkCooldown('@nandordena →')) {
+    if (event.text.includes('📦 @nandordena →')) {
       // Parsear inventario del mensaje de mochila
       const inventoryMatch = event.text.match(/.*@\w+ → \[(.*?)\] \|.*\s(\d+)\/(\d+)/);
       if (inventoryMatch) {
@@ -1027,9 +1022,16 @@ export async function read(event) {
 
     }
     if (
+      event.command.name === 'ciudadela'
+      && isAdmin(event)
+    ) {
+      global.kingsbane.site === "ciudadela";
+      await event.send('!almacen');
+    }
+    if (
       (
-        event.text.includes("colmena se mueve")
-        || event.text.includes("estamos en")
+        event.text.includes("La colmena se mueve a")
+        && event.text.includes("[G.E.N.I.O.]")
       )
     ) {
       if (event.text.toLowerCase().includes("ciudadela")) global.kingsbane.site = "ciudadela";
